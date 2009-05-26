@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen  
+    xmlns:android="http://schemas.android.com/apk/res/android">  
+	<PreferenceCategory android:title="General options">
+
+		<ListPreference  
+			android:key="dictpref"  
+			android:title="Select dictionary"  
+			android:summary="Language variant for words"  
+			android:entries="@array/dictionarynames"  
+			android:entryValues="@array/dictionaryvalues"  
+			android:dialogTitle="Select Dictionary"
+			android:defaultValue="0" /> 			
+	</PreferenceCategory>
+
+</PreferenceScreen>  
