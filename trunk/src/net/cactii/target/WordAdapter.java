@@ -51,7 +51,7 @@ public class WordAdapter extends BaseAdapter {
     switch(playerWord.result) {
       case PlayerWord.RESULT_INVALID :
         playerWordItemResult.setText("INVALID");
-        wordRow.setBackgroundColor(0xA0FFE0E0);
+        wordRow.setBackgroundColor(0x90FFB0B0);
         break;
       case PlayerWord.RESULT_MISSED :
         wordRow.setBackgroundColor(0x8FFFFFA0);
