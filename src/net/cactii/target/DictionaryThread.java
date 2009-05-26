@@ -44,7 +44,11 @@ public class DictionaryThread implements Runnable {
     Looper.prepare();
     DictionaryThread.setCurrent(this);
     getDictionary();
-    getNineLetterWords();	
+
+    nineLetterWords = new ArrayList<String>();
+    getNineLetterWords(R.raw.nineletterwords_common);	
+    getNineLetterWords(nineLetterDictionary);
+    
     Message message = Message.obtain();
     message.what = MESSAGE_DICTIONARY_READY;
     MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);
@@ -73,7 +77,10 @@ public class DictionaryThread implements Runnable {
         }
         case MESSAGE_GET_MATCHING_WORDS : {
           // Find words matching current nine letter (shuffled)
-          getMatchingWords();
+          validWords = new ArrayList<String>();
+          getMatchingWords(R.raw.words_common);
+          getMatchingWords(currentDictionary);
+          
           // Send notification back to main thread
           Message message = Message.obtain();
           message.what = MESSAGE_HAVE_MATCHING_WORDS;
@@ -83,17 +90,18 @@ public class DictionaryThread implements Runnable {
         case MESSAGE_REREAD_DICTIONARY : {
           // Dictionary selection has changed, reload
           getDictionary();
-          getNineLetterWords();
+          nineLetterWords.clear();
+          getNineLetterWords(R.raw.nineletterwords_common); 
+          getNineLetterWords(nineLetterDictionary);
         }
       }
     }
   };
 
   // Fetch all nine letter words from the dictionary, populates this.nineLetterWords.
-  private void getNineLetterWords() {
-    InputStream is = MainActivity.currentInstance.getResources().openRawResource(this.nineLetterDictionary);
+  private void getNineLetterWords(int dictionary) {
+    InputStream is = MainActivity.currentInstance.getResources().openRawResource(dictionary);
     BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-    nineLetterWords = new ArrayList<String>();
     String word;
     try {
       while((word = rd.readLine())!=null) {
@@ -108,10 +116,9 @@ public class DictionaryThread implements Runnable {
   }
 
   // Get all words matching currentNineLetter and magicLetter
-  private void getMatchingWords() {
-    InputStream is = MainActivity.currentInstance.getResources().openRawResource(this.currentDictionary);
+  private void getMatchingWords(int dictionary) {
+    InputStream is = MainActivity.currentInstance.getResources().openRawResource(dictionary);
     BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-    validWords = new ArrayList<String>();
     String word;
     try {
       while((word = rd.readLine())!=null) {
@@ -173,12 +180,12 @@ public class DictionaryThread implements Runnable {
   private void getDictionary() {
     String dict = PreferenceManager.getDefaultSharedPreferences(MainActivity.currentInstance).getString("dictpref", "2");
     if (dict.equals("2")) {
-      Toast.makeText(MainActivity.currentInstance, "Select your dictionary in Options", Toast.LENGTH_LONG).show();
+      Toast.makeText(MainActivity.currentInstance, "Select your dictionary in Options, defaulting to UK.", Toast.LENGTH_LONG).show();
       dict = "0";
     }
     if (dict.equals("0")) {
-      this.nineLetterDictionary = R.raw.nineletterwords;
-      this.currentDictionary = R.raw.words;
+      this.nineLetterDictionary = R.raw.nineletterwords_uk;
+      this.currentDictionary = R.raw.words_uk;
       Log.d("Target", "Reading British dictionary");
     }
     else if (dict.equals("1")) {
