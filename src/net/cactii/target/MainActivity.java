@@ -23,7 +23,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,9 +30,7 @@ import android.view.SubMenu;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
-import android.view.View.OnCreateContextMenuListener;
 import android.view.View.OnLongClickListener;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -66,11 +63,10 @@ public class MainActivity extends Activity {
   private ListView playerWordList;
   // Adapter to link playerWordList to playerWords
   private WordAdapter playerWordsAdapter = null;
+  // Selected word in listitem popup
+  public PlayerWord currentSelectedWord;
   
   private TextView bottomText = null;
-  
-  public static final int CONTEXT_DELETE = 0;
-  public static final int CONTEXT_DEFINE = 1;
 
   private static void setCurrent(MainActivity current){
     MainActivity.currentInstance = current;
@@ -95,6 +91,7 @@ public class MainActivity extends Activity {
     this.targetCounts = (TextView)findViewById(R.id.targetCounts);
     this.playerWordList = (ListView)findViewById(R.id.playerWordList);
     this.bottomText = (TextView)findViewById(R.id.bottomText);
+   
 
     // This is the font for the current word box.
     // This is 'Purisa' for now (ubuntu ttf-thai-tlwg)
@@ -142,39 +139,57 @@ public class MainActivity extends Activity {
         PlayerWord playerWord = new PlayerWord(word);
         MainActivity.this.playerWords.add(playerWord);
         MainActivity.this.playerWordsAdapter.notifyDataSetChanged();
-        MainActivity.this.playerWordList.setSelectionFromTop(MainActivity.this.playerWords.size()-1, 10);
         enteredWordBox.setText("");
         targetGrid.clearGrid();
         if (PreferenceManager.getDefaultSharedPreferences(
-        		MainActivity.currentInstance).getBoolean("livescoring", false)) {
+        		MainActivity.this).getBoolean("livescoring", false)) {
         	MainActivity.this.scoreWord(playerWord);
-        }
-        MainActivity.this.showWordCounts(MainActivity.this.countCorrectWords());
+          MainActivity.this.showWordCounts(MainActivity.this.countCorrectWords());
+        } else
+          MainActivity.this.showWordCounts(MainActivity.this.CountPlayerWords());
+        MainActivity.this.playerWordList.setSelectionFromTop(MainActivity.this.playerWords.size()-1, 10);
       }
     });
-    /*
+
     this.playerWordList.setOnItemClickListener(new OnItemClickListener() {
-    	public void onItemClick(AdapterView adapterView, View view, int arg2, long arg3) {
-    		int selectedPosition = adapterView.getSelectedItemPosition();
+    	public void onItemClick(AdapterView adapterView, View view, int position, long id) {
+    	  PlayerWord word = MainActivity.this.playerWords.get(position);
+    	  MainActivity.this.currentSelectedWord = word;
+    		
+    		String[] choices = {new String("Delete word"), new String("Find definition")};
+    		new AlertDialog.Builder(view.getContext())
+        .setTitle("Selected: " + word.word)
+        //.setMessage("Blah")
+        .setItems(choices, new DialogInterface.OnClickListener() {
+          @Override
+          public void onClick(DialogInterface dialog, int which) {
+            PlayerWord word = MainActivity.this.currentSelectedWord;
+            Log.d("Target", "Selected was: " + which + " for " + word.word);
+            switch (which) {
+            case 0: // Delete
+              if (MainActivity.this.targetGrid.gameActive == false)
+                return;
+              MainActivity.this.playerWords.remove(MainActivity.this.playerWords.indexOf(word));
+              MainActivity.this.playerWordsAdapter.notifyDataSetChanged();
+              MainActivity.this.showWordCounts(MainActivity.this.CountPlayerWords());
+              break;
+            case 1: // Define
+              Intent myIntent = null;
+              myIntent = new Intent("android.intent.action.VIEW", Uri.parse("http://www.google.com/" +
+                  "search?q=define:" + word.word.toLowerCase()));
+              // Start the activity
+              startActivity(myIntent); 
+          }
+          }
+        })
+        .show();
     	}
     });
-    */
     
-    /* Add Context-Menu listener to the ListView. */
-    this.playerWordList.setOnCreateContextMenuListener(new OnCreateContextMenuListener() {
-
-      @Override
-      public void onCreateContextMenu(ContextMenu menu, View v,
-          ContextMenuInfo menuInfo) {
-        menu.setHeaderTitle("Selected word");
-        menu.add(ContextMenu.NONE, CONTEXT_DELETE, ContextMenu.NONE, "Delete word");
-        menu.add(ContextMenu.NONE, CONTEXT_DEFINE, ContextMenu.NONE, "Define word");
-        // Log.d("Target", "Selected: " + menu.);
-      }
-    });
-
     // Initialise the playerWord list, and set the Adapter.
     this.playerWords = new ArrayList<PlayerWord>();
+    this.InitPlayerWords();
+    
     this.playerWordsAdapter = new WordAdapter(this, this.playerWords);
     this.playerWordList.setAdapter(this.playerWordsAdapter);
 
@@ -184,7 +199,7 @@ public class MainActivity extends Activity {
 
     this.setGameState(false);
   }
-
+  
   public Handler newWordReadyHandler = new Handler() {
     public void handleMessage(Message msg) {
       switch (msg.what) {
@@ -214,8 +229,7 @@ public class MainActivity extends Activity {
   };
 
   public void onDestroy() {
-    if (this.targetGrid.gameActive)
-      this.saveGame();
+    this.saveGame();
     super.onDestroy();
   }
 
@@ -226,6 +240,24 @@ public class MainActivity extends Activity {
     this.clearWord.setEnabled(state);
     this.playerWordList.setClickable(state);
 //    this.playerWordList.setLongClickable(state);
+  }
+  
+  public void InitPlayerWords() {
+    this.playerWords.clear();
+    PlayerWord header = new PlayerWord("YOUR WORDS");
+    header.result = PlayerWord.RESULT_HEADER;
+    this.playerWords.add(header);
+  }
+  
+  // Returns a count of the player's words.
+  public int CountPlayerWords() {
+    int count = 0;
+    for (PlayerWord word : this.playerWords) {
+      if (word.result != PlayerWord.RESULT_HEADER &&
+          word.result != PlayerWord.RESULT_MISSED)
+        count++;
+    }
+    return count;
   }
 
   // Save the current game state
@@ -238,13 +270,20 @@ public class MainActivity extends Activity {
     BufferedWriter writer = null;
     try {
       writer = new BufferedWriter(new FileWriter(MainActivity.saveFilename));
+      if (this.targetGrid.gameActive)
+        writer.write("active\n");
+      else
+        writer.write("inactive\n");
       writer.write(DictionaryThread.currentInstance.currentNineLetter + "\n");
       writer.write(DictionaryThread.currentInstance.currentShuffled + "\n");
       for (String word : DictionaryThread.currentInstance.validWords)
         writer.write(word + "\n");
       writer.write("@@PLAYERWORDS@@\n");
-      for (PlayerWord word : this.playerWords)
-        writer.write(word.word + "\n");
+      for (PlayerWord word : this.playerWords) {
+        if (word.result != PlayerWord.RESULT_HEADER &&
+            word.result != PlayerWord.RESULT_MISSED)
+          writer.write(word.word + "\n");
+      }
     } catch (IOException e) {
       Log.d("Target", "Error saving game: "+e.getMessage());
     }
@@ -268,7 +307,8 @@ public class MainActivity extends Activity {
     try {
       ins = new FileInputStream(new File(MainActivity.saveFilename));
       br = new BufferedReader(new InputStreamReader(ins), 8192);
-      this.playerWords.clear();
+      this.InitPlayerWords();
+      String activeState = br.readLine();
       DictionaryThread.currentInstance.currentNineLetter = br.readLine();
       DictionaryThread.currentInstance.currentNineLetterArray = DictionaryThread.currentInstance.currentNineLetter.toCharArray();
       DictionaryThread.currentInstance.currentShuffled = br.readLine();
@@ -292,8 +332,16 @@ public class MainActivity extends Activity {
       this.bottomText.setVisibility(View.GONE);
       this.playerWordList.setVisibility(View.VISIBLE);
       this.playerWordsAdapter.notifyDataSetChanged();
-      this.setGameState(true);
-      showWordCounts(this.playerWords.size());
+      if (PreferenceManager.getDefaultSharedPreferences(
+          MainActivity.this).getBoolean("livescoring", false)) {
+        showWordCounts(this.countCorrectWords());
+      } else
+        showWordCounts(this.CountPlayerWords());
+      if (activeState.equals("inactive")) {
+        this.setGameState(false);
+        this.scoreAllWords();
+      } else
+        this.setGameState(true);
       Log.d("Target", "Restored game successfully.");
     } catch (FileNotFoundException e) {
       Log.d("Target", "FNF Error restoring game: " + e.getMessage());
@@ -368,7 +416,7 @@ public class MainActivity extends Activity {
       msg.what = DictionaryThread.MESSAGE_GET_NINELETTER;
       DictionaryThread.currentInstance.messageHandler.sendMessage(msg);
 
-      this.playerWords.clear();
+      this.InitPlayerWords();
       this.playerWordsAdapter.notifyDataSetChanged();
       break;
     }
@@ -391,30 +439,6 @@ public class MainActivity extends Activity {
     return supRetVal;
   }
 
-  // Called on a long press of a word, asks player to delete the word.
-  public boolean onContextItemSelected(MenuItem item) {
-    AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
-    /* Switch on the ID of the item, to get what the user selected. */
-    switch (item.getItemId()) {
-      case CONTEXT_DELETE:
-        if (this.targetGrid.gameActive == false)
-          return true;
-        this.playerWords.remove((int)menuInfo.id);
-        this.playerWordsAdapter.notifyDataSetChanged();
-        this.showWordCounts(this.playerWords.size());
-        return true; /* true means: "we handled the event". */
-      case CONTEXT_DEFINE:
-        String word = this.playerWords.get((int)menuInfo.id).word;
-        Intent myIntent = null;
-        myIntent = new Intent("android.intent.action.VIEW", Uri.parse("http://www.google.com/" +
-            "search?q=define:" + word.toLowerCase()));
-        // Start the activity
-        startActivity(myIntent); 
-        return true;
-    }
-    return false;
-  }
-  
   private boolean playerHasWord(String word) {
     for (PlayerWord playerWord : this.playerWords) {
       if (playerWord.word.contentEquals(word))
@@ -427,7 +451,7 @@ public class MainActivity extends Activity {
   public int countCorrectWords() {
 	  int correct = 0;
 	  for (PlayerWord playerWord : this.playerWords) {
-		  if (scoreWord(playerWord))
+		  if (playerWord.result != PlayerWord.RESULT_HEADER && scoreWord(playerWord))
 			  correct++;
 	  }
 	  return correct;
@@ -471,7 +495,7 @@ public class MainActivity extends Activity {
     }
     this.playerWordsAdapter.notifyDataSetChanged();
     showWordCounts(correctUserWords);
-    new File(MainActivity.saveFilename).delete();
+    // new File(MainActivity.saveFilename).delete();
   }
 
   private void openHelpDialog() {
