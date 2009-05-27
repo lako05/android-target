@@ -10,7 +10,11 @@
 			android:entries="@array/dictionarynames"  
 			android:entryValues="@array/dictionaryvalues"  
 			android:dialogTitle="Select Dictionary"
-			android:defaultValue="0" /> 			
+			android:defaultValue="0" />
+		<CheckBoxPreference
+			android:key="livescoring"
+			android:title="Realtime scoring"
+			android:summary="Score words as they are submitted."/>
 	</PreferenceCategory>
 
 </PreferenceScreen>  
