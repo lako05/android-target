@@ -21,6 +21,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -39,6 +40,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.AdapterView.OnItemClickListener;
 
 public class MainActivity extends Activity {
 
@@ -143,9 +145,20 @@ public class MainActivity extends Activity {
         MainActivity.this.playerWordList.setSelectionFromTop(MainActivity.this.playerWords.size()-1, 10);
         enteredWordBox.setText("");
         targetGrid.clearGrid();
-        MainActivity.this.showWordCounts(MainActivity.this.playerWords.size());
+        if (PreferenceManager.getDefaultSharedPreferences(
+        		MainActivity.currentInstance).getBoolean("livescoring", false)) {
+        	MainActivity.this.scoreWord(playerWord);
+        }
+        MainActivity.this.showWordCounts(MainActivity.this.countCorrectWords());
       }
     });
+    /*
+    this.playerWordList.setOnItemClickListener(new OnItemClickListener() {
+    	public void onItemClick(AdapterView adapterView, View view, int arg2, long arg3) {
+    		int selectedPosition = adapterView.getSelectedItemPosition();
+    	}
+    });
+    */
     
     /* Add Context-Menu listener to the ListView. */
     this.playerWordList.setOnCreateContextMenuListener(new OnCreateContextMenuListener() {
@@ -362,7 +375,7 @@ public class MainActivity extends Activity {
     case MENU_SCORE : {
       if (targetGrid.gameActive) {
         this.setGameState(false);
-        this.scoreWords();
+        this.scoreAllWords();
       }
       break;
     }
@@ -409,20 +422,34 @@ public class MainActivity extends Activity {
     }
     return false;
   }
+  
+  // Count the number of correct words the player has.
+  public int countCorrectWords() {
+	  int correct = 0;
+	  for (PlayerWord playerWord : this.playerWords) {
+		  if (scoreWord(playerWord))
+			  correct++;
+	  }
+	  return correct;
+  }
+  
+  // Score an individual word
+  // Returns boolean, if the word is valid/ok
+  public boolean scoreWord(PlayerWord playerWord) {
+	if (DictionaryThread.currentInstance.validWords.contains(playerWord.word) ||
+	    playerWord.word.equals(DictionaryThread.currentInstance.currentNineLetter)) {
+	  playerWord.result = PlayerWord.RESULT_OK;
+	} else
+	  playerWord.result = PlayerWord.RESULT_INVALID;
+	this.playerWordsAdapter.notifyDataSetChanged();
+	return playerWord.result == PlayerWord.RESULT_OK;
+  }
 
   // Score the player's words.
-  public void scoreWords() {
-    int correctPlayerWords = 0;
-    
-    // Loop thru player words, see if it matches any of the valid words.
-    for (PlayerWord playerWord : this.playerWords) {
-      if (DictionaryThread.currentInstance.validWords.contains(playerWord.word) ||
-          playerWord.word.equals(DictionaryThread.currentInstance.currentNineLetter)) {
-        playerWord.result = PlayerWord.RESULT_OK;
-        correctPlayerWords++;
-      } else
-        playerWord.result = PlayerWord.RESULT_INVALID;
-    }
+  public void scoreAllWords() {
+	int correctUserWords;
+	
+	correctUserWords = countCorrectWords();
     PlayerWord header = new PlayerWord("MISSED WORDS");
     header.result = PlayerWord.RESULT_HEADER;
     this.playerWords.add(header);
@@ -443,7 +470,7 @@ public class MainActivity extends Activity {
       }
     }
     this.playerWordsAdapter.notifyDataSetChanged();
-    showWordCounts(correctPlayerWords);
+    showWordCounts(correctUserWords);
     new File(MainActivity.saveFilename).delete();
   }
 
