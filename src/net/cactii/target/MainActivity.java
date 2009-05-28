@@ -67,6 +67,9 @@ public class MainActivity extends Activity {
   public PlayerWord currentSelectedWord;
   
   private TextView bottomText = null;
+  
+  public int listActionDelete;
+  public int listActionDefine;
 
   private static void setCurrent(MainActivity current){
     MainActivity.currentInstance = current;
@@ -155,31 +158,40 @@ public class MainActivity extends Activity {
     	public void onItemClick(AdapterView adapterView, View view, int position, long id) {
     	  PlayerWord word = MainActivity.this.playerWords.get(position);
     	  MainActivity.this.currentSelectedWord = word;
-    		
-    		String[] choices = {new String("Delete word"), new String("Find definition")};
+    		String[] choices;
+    		if (word.result != PlayerWord.RESULT_HEADER && word.result != PlayerWord.RESULT_MISSED &&
+    		    MainActivity.this.targetGrid.gameActive) {
+    		  choices = new String[2];
+    		  choices[0] = new String("Delete word");
+    		  MainActivity.this.listActionDelete = 0;
+    		  choices[1] = new String("Find definition");
+    		  MainActivity.this.listActionDefine = 1;
+    		} else {
+    		  choices = new String[1];
+    		  choices[0] = new String("Find definition");
+    		  MainActivity.this.listActionDefine = 0;
+    		  MainActivity.this.listActionDelete = 2;
+    		}
     		new AlertDialog.Builder(view.getContext())
         .setTitle("Selected: " + word.word)
-        //.setMessage("Blah")
         .setItems(choices, new DialogInterface.OnClickListener() {
           @Override
           public void onClick(DialogInterface dialog, int which) {
             PlayerWord word = MainActivity.this.currentSelectedWord;
             Log.d("Target", "Selected was: " + which + " for " + word.word);
-            switch (which) {
-            case 0: // Delete
+            if (which == MainActivity.this.listActionDelete) {
               if (MainActivity.this.targetGrid.gameActive == false)
                 return;
               MainActivity.this.playerWords.remove(MainActivity.this.playerWords.indexOf(word));
               MainActivity.this.playerWordsAdapter.notifyDataSetChanged();
               MainActivity.this.showWordCounts(MainActivity.this.CountPlayerWords());
-              break;
-            case 1: // Define
+            } else if (which == MainActivity.this.listActionDefine) {
               Intent myIntent = null;
               myIntent = new Intent("android.intent.action.VIEW", Uri.parse("http://www.google.com/" +
                   "search?q=define:" + word.word.toLowerCase()));
               // Start the activity
               startActivity(myIntent); 
-          }
+            }
           }
         })
         .show();
@@ -218,7 +230,7 @@ public class MainActivity extends Activity {
       }
       case DictionaryThread.MESSAGE_HAVE_MATCHING_WORDS :
         // Called when Dictionary thread has found all matching words.
-        showWordCounts(MainActivity.this.playerWords.size());
+        showWordCounts(0);
         break;
       case DictionaryThread.MESSAGE_DICTIONARY_READY :
         // Called after game is restored when dictionary is ready.
@@ -268,6 +280,11 @@ public class MainActivity extends Activity {
   // Then the rest are the player's words
   private void saveGame() {
     BufferedWriter writer = null;
+    if (DictionaryThread.currentInstance.validWords == null ||
+        DictionaryThread.currentInstance.validWords.size() < 1) {
+      Log.d("Target", "No game to save");
+      return;
+    }
     try {
       writer = new BufferedWriter(new FileWriter(MainActivity.saveFilename));
       if (this.targetGrid.gameActive)
@@ -418,6 +435,7 @@ public class MainActivity extends Activity {
 
       this.InitPlayerWords();
       this.playerWordsAdapter.notifyDataSetChanged();
+      new File(MainActivity.saveFilename).delete();
       break;
     }
     case MENU_SCORE : {
@@ -495,7 +513,6 @@ public class MainActivity extends Activity {
     }
     this.playerWordsAdapter.notifyDataSetChanged();
     showWordCounts(correctUserWords);
-    // new File(MainActivity.saveFilename).delete();
   }
 
   private void openHelpDialog() {
