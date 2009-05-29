@@ -15,7 +15,9 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInfo;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -65,6 +67,9 @@ public class MainActivity extends Activity {
   private WordAdapter playerWordsAdapter = null;
   // Selected word in listitem popup
   public PlayerWord currentSelectedWord;
+  // Appl preferences
+  public SharedPreferences preferences;
+  public SharedPreferences.Editor prefeditor = null;
   
   private TextView bottomText = null;
   
@@ -95,7 +100,11 @@ public class MainActivity extends Activity {
     this.playerWordList = (ListView)findViewById(R.id.playerWordList);
     this.bottomText = (TextView)findViewById(R.id.bottomText);
    
-
+    this.preferences = PreferenceManager.getDefaultSharedPreferences(this);
+    this.prefeditor = preferences.edit();
+    
+    newVersionCheck();
+    
     // This is the font for the current word box.
     // This is 'Purisa' for now (ubuntu ttf-thai-tlwg)
     Typeface face=Typeface.createFromAsset(getAssets(), "fonts/font.ttf");
@@ -144,8 +153,7 @@ public class MainActivity extends Activity {
         MainActivity.this.playerWordsAdapter.notifyDataSetChanged();
         enteredWordBox.setText("");
         targetGrid.clearGrid();
-        if (PreferenceManager.getDefaultSharedPreferences(
-        		MainActivity.this).getBoolean("livescoring", false)) {
+        if (preferences.getBoolean("livescoring", false)) {
         	MainActivity.this.scoreWord(playerWord);
           MainActivity.this.showWordCounts(MainActivity.this.countCorrectWords());
         } else
@@ -327,8 +335,17 @@ public class MainActivity extends Activity {
       this.InitPlayerWords();
       String activeState = br.readLine();
       DictionaryThread.currentInstance.currentNineLetter = br.readLine();
+      if (DictionaryThread.currentInstance.currentNineLetter == null) {
+        Log.d("Target", "Misc Error restoring game");
+        return;
+      }
+      
       DictionaryThread.currentInstance.currentNineLetterArray = DictionaryThread.currentInstance.currentNineLetter.toCharArray();
       DictionaryThread.currentInstance.currentShuffled = br.readLine();
+      if (DictionaryThread.currentInstance.currentShuffled == null) {
+        Log.d("Target", "Misc Error restoring game");
+        return;
+      }
       this.targetGrid.setLetters(DictionaryThread.currentInstance.currentShuffled);
       DictionaryThread.currentInstance.magicLetter = DictionaryThread.currentInstance.currentShuffled.substring(4, 5);
       boolean fetchingPlayerWords = false;
@@ -349,8 +366,7 @@ public class MainActivity extends Activity {
       this.bottomText.setVisibility(View.GONE);
       this.playerWordList.setVisibility(View.VISIBLE);
       this.playerWordsAdapter.notifyDataSetChanged();
-      if (PreferenceManager.getDefaultSharedPreferences(
-          MainActivity.this).getBoolean("livescoring", false)) {
+      if (preferences.getBoolean("livescoring", false)) {
         showWordCounts(this.countCorrectWords());
       } else
         showWordCounts(this.CountPlayerWords());
@@ -447,6 +463,8 @@ public class MainActivity extends Activity {
     }
     case MENU_INSTRUCTIONS : {
       openHelpDialog();
+//      SmhImport smh = new SmhImport();
+//      smh.GetSmhPuzzle();
       break;
     }
     case MENU_OPTIONS :
@@ -528,5 +546,28 @@ public class MainActivity extends Activity {
       }
     })
     .show();  		
+  }
+  
+  public void newVersionCheck() {
+    int pref_version = preferences.getInt("currentversion", -1);
+    int current_version = getVersionNumber();
+    if (pref_version == -1 || pref_version != current_version) {
+      this.prefeditor.putInt("currentversion", current_version);
+      this.prefeditor.commit();
+      new File(MainActivity.saveFilename).delete();
+      Log.d("Target", "Version number bumped from " + pref_version + " to " + current_version);
+      return;
+    }
+  }
+  
+  public int getVersionNumber() {
+    int version = -1;
+      try {
+          PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+          version = pi.versionCode;
+      } catch (Exception e) {
+          Log.e("Target", "Package name not found", e);
+      }
+      return version;
   }
 }
