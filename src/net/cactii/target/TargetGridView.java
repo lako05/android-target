@@ -1,3 +1,6 @@
+/*
+ * A view that describes a nine letter target grid.
+ */
 package net.cactii.target;
 
 import android.content.Context;
@@ -22,6 +25,7 @@ public class TargetGridView extends View implements OnTouchListener {
   private static final int centerLetterColor = Color.WHITE;
   private static final int letterColor = Color.BLACK;
   private static final int letterHighlightColor = 0x90FFFF00;
+  private static final int middleHighlightColor = 0x90BFBF00;
 
   // Set paint objects
   private Paint backgroundPaint;		// Overall background
@@ -30,6 +34,7 @@ public class TargetGridView extends View implements OnTouchListener {
   private Paint centerLetterPaint;	// Center letter
   private Paint centerPaint;			// Center background
   private Paint highlightPaint;		// Square highlight
+  private Paint middleHighlightPaint; // Middle square's highlight
 
   // An array to indicate which letters are displayed as highlighted
   private boolean[] highlights = {
@@ -68,7 +73,7 @@ public class TargetGridView extends View implements OnTouchListener {
 
     letterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     letterPaint.setColor(letterColor);
-    letterPaint.setTextSize(32);
+    letterPaint.setTextSize(36);
     letterPaint.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
 
     centerPaint = new Paint();
@@ -81,6 +86,9 @@ public class TargetGridView extends View implements OnTouchListener {
 
     highlightPaint = new Paint();
     highlightPaint.setColor(letterHighlightColor);
+    
+    middleHighlightPaint = new Paint();
+    middleHighlightPaint.setColor(middleHighlightColor);
 
     this.setOnTouchListener((OnTouchListener) this);
     this.gameActive = false;
@@ -148,7 +156,10 @@ public class TargetGridView extends View implements OnTouchListener {
         squarePaint = backgroundPaint;
       }
     } else {
-      squarePaint = highlightPaint;
+      if (index == 4)
+        squarePaint = middleHighlightPaint;
+      else
+        squarePaint = highlightPaint;
       textPaint = letterPaint;
     }
 

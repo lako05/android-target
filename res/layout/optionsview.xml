@@ -14,7 +14,12 @@
 		<CheckBoxPreference
 			android:key="livescoring"
 			android:title="Realtime scoring"
+			android:defaultValue="true"
 			android:summary="Score words as they are submitted."/>
+		<CheckBoxPreference
+			android:key="smhimport"
+			android:title="Enable SMH import"
+			android:summary="Import puzzle from smh.com.au."/>
 	</PreferenceCategory>
 
 </PreferenceScreen>  

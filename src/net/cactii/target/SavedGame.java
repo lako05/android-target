@@ -1,0 +1,149 @@
+package net.cactii.target;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+
+import android.util.Log;
+import android.view.View;
+
+public class SavedGame {
+  
+  private MainActivity activity;
+  
+  public SavedGame(MainActivity activity) {
+    this.activity = activity;
+  }
+
+  // Save the current game state
+  // Simple text file..
+  // First line is nine letter word
+  // Second line is shuffled version
+  // Other lines are valid words, until @@PLAYERWORDS@@
+  // Then the rest are the player's words
+  public void Save() {
+    BufferedWriter writer = null;
+    if (DictionaryThread.currentInstance.validWords == null ||
+        DictionaryThread.currentInstance.validWords.size() < 1) {
+      Log.d("Target", "No game to save");
+      return;
+    }
+    try {
+      writer = new BufferedWriter(new FileWriter(MainActivity.saveFilename));
+      if (this.activity.targetGrid.gameActive)
+        writer.write("active\n");
+      else
+        writer.write("inactive\n");
+      writer.write(DictionaryThread.currentInstance.currentNineLetter.word + "\n");
+      writer.write(DictionaryThread.currentInstance.currentNineLetter.shuffled + "\n");
+      for (String word : DictionaryThread.currentInstance.validWords)
+        writer.write(word + "\n");
+      writer.write("@@PLAYERWORDS@@\n");
+      for (PlayerWord word : this.activity.playerWords) {
+        if (word.result != PlayerWord.RESULT_HEADER &&
+            word.result != PlayerWord.RESULT_MISSED)
+          writer.write(word.word + "\n");
+      }
+    } catch (IOException e) {
+      Log.d("Target", "Error saving game: "+e.getMessage());
+    }
+    finally {
+      try {
+        if (writer != null)
+          writer.close();
+      } catch (IOException e) {
+        //pass
+      }
+    }
+    Log.d("Target", "Successfully saved game.");
+  }
+
+  // restore from the above saved file
+  public void Restore() {
+    String line = null;
+    BufferedReader br = null;
+    InputStream ins = null;
+    
+    String currentNineLetter = "";
+    String currentShuffled = "";
+    ArrayList<String> validWords = new ArrayList<String>();
+    ArrayList<PlayerWord> playerWords = new ArrayList<PlayerWord>();
+    String activeState = "";
+
+    try {
+      ins = new FileInputStream(new File(MainActivity.saveFilename));
+      br = new BufferedReader(new InputStreamReader(ins), 8192);
+      activeState = br.readLine();
+      currentNineLetter = br.readLine();
+      currentShuffled = br.readLine();
+
+      boolean fetchingPlayerWords = false;
+      while((line = br.readLine())!=null) {
+        String word = line.trim();
+        if (fetchingPlayerWords) {
+          PlayerWord playerWord = new PlayerWord(word);
+          playerWords.add(playerWord);
+        } else {
+          if (word.equals("@@PLAYERWORDS@@")) {
+            fetchingPlayerWords = true;
+            continue;
+          }
+          validWords.add(word);
+        }
+      }
+    } catch (FileNotFoundException e) {
+      Log.d("Target", "FNF Error restoring game: " + e.getMessage());
+    } catch (IOException e) {
+      Log.d("Target", "IO Error restoring game: " + e.getMessage());
+    }
+    finally {
+      try {
+        ins.close();
+        br.close();
+      } catch (Exception e) {
+        // Nothing.
+      }
+    }
+
+    // Validate data read from the savedgame file
+    if (currentNineLetter.length() != 9 ||
+        currentShuffled.length() != 9 ||
+        validWords.size() < 1 ||
+        activeState.contains("active") == false) {
+      Log.d("Target", "Error restoring game");
+      return;
+    }
+
+    // Populate the game with the words, letter, etc.
+    DictionaryThread.currentInstance.currentNineLetter = new NineLetterWord(currentNineLetter);
+    DictionaryThread.currentInstance.currentNineLetter.setShuffledWord(currentShuffled);
+    this.activity.targetGrid.setLetters(currentShuffled);
+    DictionaryThread.currentInstance.validWords = validWords;
+    this.activity.InitPlayerWords();
+    for (PlayerWord word : playerWords)
+      this.activity.playerWords.add(word);
+    
+    // Restore the UI state
+    this.activity.bottomText.setVisibility(View.GONE);
+    this.activity.playerWordList.setVisibility(View.VISIBLE);
+    this.activity.playerWordsAdapter.notifyDataSetChanged();
+    this.activity.setGameState(true);
+    if (this.activity.preferences.getBoolean("livescoring", false)) {
+      this.activity.showWordCounts(this.activity.countCorrectWords());
+    } else
+      this.activity.showWordCounts(this.activity.CountPlayerWords());
+    if (activeState.equals("inactive")) {
+      this.activity.setGameState(false);
+      this.activity.scoreAllWords();
+    } else
+      this.activity.setGameState(true);
+    Log.d("Target", "Restored game successfully.");
+  }
+}
