@@ -21,17 +21,19 @@ public class DictionaryThread implements Runnable {
   public static final int MESSAGE_HAVE_MATCHING_WORDS= 3;
   public static final int MESSAGE_DICTIONARY_READY= 4;
   public static final int MESSAGE_REREAD_DICTIONARY = 5;
+  public static final int MESSAGE_GET_SMH_NINELETTER = 6;
+  public static final int MESSAGE_HAVE_SMH_NINELETTER = 7;
+  public static final int MESSAGE_FAIL_SMH_NINELETTER = 8;
 
   private int nineLetterDictionary = 2;
   private int currentDictionary = 2;
   
-  private ArrayList<String> nineLetterWords;
+  // List of all nine letter words
+  private ArrayList<NineLetterWord> nineLetterWords;
+  // List of valid words for current Nine letter
   public ArrayList<String> validWords;
 
-  public String currentNineLetter;
-  public char[] currentNineLetterArray;
-  public String currentShuffled;
-  public String magicLetter;
+  public NineLetterWord currentNineLetter;
 
   public static DictionaryThread currentInstance = null;
 
@@ -45,7 +47,7 @@ public class DictionaryThread implements Runnable {
     DictionaryThread.setCurrent(this);
     getDictionary();
 
-    nineLetterWords = new ArrayList<String>();
+    nineLetterWords = new ArrayList<NineLetterWord>();
     getNineLetterWords(R.raw.nineletterwords_common);	
     getNineLetterWords(nineLetterDictionary);
     
@@ -58,20 +60,38 @@ public class DictionaryThread implements Runnable {
   public Handler messageHandler = new Handler() {
     public void handleMessage(Message msg) {
       switch(msg.what) {
+        case MESSAGE_GET_SMH_NINELETTER : {
+          SmhImport smhThread = new SmhImport();
+//        smhThread.currentPuzzleDate = "2009/05/23";
+          new Thread(smhThread).start();
+          break;
+        }
+        case MESSAGE_HAVE_SMH_NINELETTER : {
+          currentNineLetter = new NineLetterWord((String) msg.obj);
+          currentNineLetter.setShuffledWord((String) msg.obj);
+          Message message = Message.obtain();
+          if (currentNineLetter == null || currentNineLetter.word.length() != 9) {
+            message.what = MESSAGE_FAIL_SMH_NINELETTER;
+          } else {
+            findNineLetterWord();
+            // Send message back saying we have the word
+            message.what = MESSAGE_HAVE_NINELETTER;
+            message.obj = currentNineLetter.shuffled;
+          }
+          MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);
+          break;
+        }
         case MESSAGE_GET_NINELETTER : {
-          // Fetch a random word from the 9-letter array.
-          currentNineLetter = nineLetterWords.get((int) (Math.random() * nineLetterWords.size()));
-          // Shuffle the letters, assign variables
-          currentShuffled = shuffle(currentNineLetter);
-          magicLetter = currentShuffled.substring(4, 5);
-          currentNineLetterArray = currentNineLetter.toCharArray();
-  
+          
+          int minSize = msg.arg1;
+          int maxSize = msg.arg2;
+          do {
+            currentNineLetter = nineLetterWords.get((int) (Math.random() * nineLetterWords.size()));
+          } while (NineLetterWord.shuffleWithRange(currentNineLetter, minSize, maxSize) == false);
           // Send message back saying we have the word
           Message message = Message.obtain();
           message.what = MESSAGE_HAVE_NINELETTER;
-          message.obj = currentShuffled;
-          // Log.d("Target", "Mixing '" + currentNineLetter +
-          //		"' into '" + currentShuffled + "'. (" + magicLetter + ")");
+          message.obj = currentNineLetter.shuffled;
           MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);
           break;
         }
@@ -103,16 +123,30 @@ public class DictionaryThread implements Runnable {
     InputStream is = MainActivity.currentInstance.getResources().openRawResource(dictionary);
     BufferedReader rd = new BufferedReader(new InputStreamReader(is));
     String word;
+    Integer wordCount;
     try {
       while((word = rd.readLine())!=null) {
         word = word.trim();
-        nineLetterWords.add(word);
+        nineLetterWords.add(new NineLetterWord(word));
       }
       is.close();
     } catch (IOException e) {
       //pass
     }
     Log.d("Target", "Read all 9 letter words.");
+  }
+
+  // From 'currentNineLetterWord', with an unknown word (ie only the
+  // scrambled word), attempt to find the word.
+  private void findNineLetterWord() {
+    validWords = new ArrayList<String>();
+    getMatchingWords(nineLetterDictionary);
+    if (validWords.size() > 0) {
+      currentNineLetter.word = validWords.get(0);
+    } else {
+      getMatchingWords(R.raw.nineletterwords_common);
+      currentNineLetter.word = validWords.get(0);
+    }
   }
 
   // Get all words matching currentNineLetter and magicLetter
@@ -123,8 +157,17 @@ public class DictionaryThread implements Runnable {
     try {
       while((word = rd.readLine())!=null) {
         word = word.trim();
-        if (isValidWord(word))
-          validWords.add(word);
+        // Nineletter words have ':' for word counts...we just want the first part
+        if (word.contains(":")) {
+          word = word.substring(0, 9);
+          if (isValidWord(word)) {
+            validWords.add(word);
+            break;
+          }
+        } else {
+          if (isValidWord(word))
+            validWords.add(word);
+        }
       }
       is.close();
     } catch (IOException e) {
@@ -135,7 +178,7 @@ public class DictionaryThread implements Runnable {
 
   // Determines if a given word matches the current nine letter
   private boolean isValidWord(String word) {
-    if (!word.contains(magicLetter))
+    if (!word.contains(currentNineLetter.magicLetter))
       return false;
 
     char checkingLetter;
@@ -143,9 +186,10 @@ public class DictionaryThread implements Runnable {
     int j;
     char[] wordArray = word.toCharArray();
     int wordLength = wordArray.length;
+    currentNineLetter.array = currentNineLetter.word.toCharArray();
 
     for (i = 0 ; i < 9 ; i++) {
-      checkingLetter = currentNineLetterArray[i];
+      checkingLetter = currentNineLetter.array[i];
       for (j = 0 ; j < wordLength ; j++) {
         if (wordArray[j] == checkingLetter) {
           wordArray[j] = '0';
@@ -159,22 +203,6 @@ public class DictionaryThread implements Runnable {
     }
     // Log.d("Target", "Found word: " + word);
     return true;
-  }
-
-  // Shuffles the letters in a word, returns the shuffled result
-  private String shuffle(String word){
-    if (word.length()<=1)
-      return word;
-
-    int split=word.length()/2;
-
-    String temp1=shuffle(word.substring(0,split));
-    String temp2=shuffle(word.substring(split));
-
-    if (Math.random() > 0.5) 
-      return temp1 + temp2;
-    else 
-      return temp2 + temp1;
   }
   
   private void getDictionary() {

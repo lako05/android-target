@@ -44,6 +44,7 @@
 	<LinearLayout
 		android:orientation="horizontal"
 		android:layout_width="fill_parent"
+		android:background="#10000000"
 		android:layout_height="wrap_content">
 
 		<TextView
@@ -52,8 +53,9 @@
 		    android:layout_height="wrap_content" 
 		    android:textSize="28dp"
 		    android:textStyle="bold"
-		    android:background="#B0DFDFC0"
+		    android:background="#00DFDFC0"
 		    android:textColor="#FF000000"
+		    android:cursorVisible="true"
 		    android:layout_weight="1"
 		    android:text=""
 		    />
