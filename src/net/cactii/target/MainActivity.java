@@ -280,9 +280,9 @@ public class MainActivity extends Activity {
     }
   };
 
-  public void onDestroy() {
+  public void onPause() {
     this.savedGame.Save();
-    super.onDestroy();
+    super.onPause();
   }
     
   @Override
