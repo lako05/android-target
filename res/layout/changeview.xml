@@ -24,6 +24,13 @@
 				android:paddingLeft="15px"
 				android:textStyle="bold"
 				android:textColor="#ffffff" />
+			<TextView android:text="v1.2: smh.com.au import, game size selection, appearance improved, added changelog."
+				android:layout_width="fill_parent" 
+				android:layout_height="wrap_content"
+				android:textColorLink="#ffffff"
+				android:paddingLeft="15px"	
+				android:paddingBottom="10px"		
+				android:textColor="#ffffff" />
 			<TextView android:text="v1.1.1: Fixed a crash in 1.1."
 				android:layout_width="fill_parent" 
 				android:layout_height="wrap_content"
