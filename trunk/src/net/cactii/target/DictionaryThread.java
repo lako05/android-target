@@ -67,12 +67,13 @@ public class DictionaryThread implements Runnable {
           break;
         }
         case MESSAGE_HAVE_SMH_NINELETTER : {
-          currentNineLetter = new NineLetterWord((String) msg.obj);
-          currentNineLetter.setShuffledWord((String) msg.obj);
-          Message message = Message.obtain();
-          if (currentNineLetter == null || currentNineLetter.word.length() != 9) {
-            message.what = MESSAGE_FAIL_SMH_NINELETTER;
+          String word = (String)msg.obj;
+	      Message message = Message.obtain();
+          if (word == null || word.length() != 9) {
+        	message.what = MESSAGE_FAIL_SMH_NINELETTER;
           } else {
+	        currentNineLetter = new NineLetterWord((String) msg.obj);
+	        currentNineLetter.setShuffledWord((String) msg.obj);
             findNineLetterWord();
             // Send message back saying we have the word
             message.what = MESSAGE_HAVE_NINELETTER;
