@@ -124,7 +124,6 @@ public class DictionaryThread implements Runnable {
     InputStream is = MainActivity.currentInstance.getResources().openRawResource(dictionary);
     BufferedReader rd = new BufferedReader(new InputStreamReader(is));
     String word;
-    Integer wordCount;
     try {
       while((word = rd.readLine())!=null) {
         word = word.trim();

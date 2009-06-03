@@ -35,6 +35,7 @@ public class TargetGridView extends View implements OnTouchListener {
   private Paint centerPaint;			// Center background
   private Paint highlightPaint;		// Square highlight
   private Paint middleHighlightPaint; // Middle square's highlight
+  private int currentWidth; // Current width of view
 
   // An array to indicate which letters are displayed as highlighted
   private boolean[] highlights = {
@@ -63,32 +64,31 @@ public class TargetGridView extends View implements OnTouchListener {
   protected void initTargetView() {
     setFocusable(true);
 
-    letters = "";
-    gridPaint = new Paint();
-    gridPaint.setColor(gridColor);
-    gridPaint.setStrokeWidth(5);
+    this.letters = "";
+    this.gridPaint = new Paint();
+    this.gridPaint.setColor(gridColor);
 
-    backgroundPaint = new Paint();
-    backgroundPaint.setColor(backgroundColor);
+    this.backgroundPaint = new Paint();
+    this.backgroundPaint.setColor(backgroundColor);
 
-    letterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    letterPaint.setColor(letterColor);
-    letterPaint.setTextSize(36);
-    letterPaint.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
+    this.letterPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    this.letterPaint.setColor(letterColor);
+    this.letterPaint.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
 
-    centerPaint = new Paint();
-    centerPaint.setColor(centerBackgroundColor);
+    this.centerPaint = new Paint();
+    this.centerPaint.setColor(centerBackgroundColor);
 
-    centerLetterPaint = new Paint();
-    centerLetterPaint.setColor(centerLetterColor);
-    centerLetterPaint.setTextSize(32);
-    centerLetterPaint.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
+    this.centerLetterPaint = new Paint();
+    this.centerLetterPaint.setColor(centerLetterColor);
+    this.centerLetterPaint.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
 
-    highlightPaint = new Paint();
-    highlightPaint.setColor(letterHighlightColor);
+    this.highlightPaint = new Paint();
+    this.highlightPaint.setColor(letterHighlightColor);
     
-    middleHighlightPaint = new Paint();
-    middleHighlightPaint.setColor(middleHighlightColor);
+    this.middleHighlightPaint = new Paint();
+    this.middleHighlightPaint.setColor(middleHighlightColor);
+    
+    this.currentWidth = 0;
 
     this.setOnTouchListener((OnTouchListener) this);
     this.gameActive = false;
@@ -119,17 +119,24 @@ public class TargetGridView extends View implements OnTouchListener {
     int width = getMeasuredWidth();
     int height = getMeasuredHeight();
 
+    if (width != this.currentWidth) {
+      this.centerLetterPaint.setTextSize((int)(width/5.5));
+      this.letterPaint.setTextSize((int)(width/5.5));
+      this.gridPaint.setStrokeWidth(width/50 + 1);
+      this.currentWidth = width;
+    }
+
     canvas.drawARGB(0, 255, 255, 255);
 
-    if (letters != "")
+    if (this.letters != "")
       for (int index = 0 ; index < 9 ; index++)
-        drawLetter(canvas, index, highlights[index]);
+        drawLetter(canvas, index, this.highlights[index]);
 
     for (float x = 0 ; x <= width ; x += width/3)
-      canvas.drawLine(x, 0, x, height, gridPaint);
+      canvas.drawLine(x, 0, x, height-1, this.gridPaint);
 
     for (float y = 0 ; y <= height ; y += height/3)
-      canvas.drawLine(0, y, width, y, gridPaint);
+      canvas.drawLine(0, y, width-1, y, this.gridPaint);
 
   }
 
@@ -140,27 +147,27 @@ public class TargetGridView extends View implements OnTouchListener {
 
     int size = getMeasuredWidth(); // Measure one as its a square
 
-    String letter = letters.substring(index, index+1);
+    String letter = this.letters.substring(index, index+1);
     float squareLeft = (index % 3) * size/3;
     float squareTop = (float) Math.floor(index/3) * size/3;
     float squareSize = size/3;
-    float letterWidth = letterPaint.measureText(letter);
-    float letterHeight = letterPaint.ascent();
+    float letterWidth = this.letterPaint.measureText(letter);
+    float letterHeight = this.letterPaint.ascent();
 
     if (!highlighted) {
       if (index == 4) {
-        textPaint = centerLetterPaint;
-        squarePaint = centerPaint;
+        textPaint = this.centerLetterPaint;
+        squarePaint = this.centerPaint;
       } else {
-        textPaint = letterPaint;
-        squarePaint = backgroundPaint;
+        textPaint = this.letterPaint;
+        squarePaint = this.backgroundPaint;
       }
     } else {
       if (index == 4)
-        squarePaint = middleHighlightPaint;
+        squarePaint = this.middleHighlightPaint;
       else
-        squarePaint = highlightPaint;
-      textPaint = letterPaint;
+        squarePaint = this.highlightPaint;
+      textPaint = this.letterPaint;
     }
 
     canvas.drawRect(squareLeft, squareTop,
@@ -174,7 +181,7 @@ public class TargetGridView extends View implements OnTouchListener {
   // Words that arent 9 letters are ignored.
   public void setLetters(String word) {
     if (word.length() == 9) {
-      letters = word;
+      this.letters = word;
       clearGrid(); // Calls invalidate() for us.
     }
   }
@@ -183,10 +190,10 @@ public class TargetGridView extends View implements OnTouchListener {
   public void clearLastLetter() {
     int gridIndex;
     for (int i = 8 ; i >= 0 ; i--) {
-      gridIndex = selectedword[i];
+      gridIndex = this.selectedword[i];
       if (gridIndex != -1) {
-        highlights[gridIndex] = false;
-        selectedword[i] = -1;
+        this.highlights[gridIndex] = false;
+        this.selectedword[i] = -1;
         invalidate();
         return;
       }
@@ -195,9 +202,9 @@ public class TargetGridView extends View implements OnTouchListener {
 
   // Unhighlights the entire grid
   public void clearGrid() {
-    highlights = new boolean[] {false, false, false, false,
+    this.highlights = new boolean[] {false, false, false, false,
         false, false, false, false, false};
-    selectedword = new int[] {-1, -1, -1, -1, -1, -1, -1, -1, -1};
+    this.selectedword = new int[] {-1, -1, -1, -1, -1, -1, -1, -1, -1};
     invalidate();
   }
 
@@ -206,9 +213,9 @@ public class TargetGridView extends View implements OnTouchListener {
     String word = "";
     int gridIndex;
     for (int i = 0 ; i < 9 ; i++) {
-      gridIndex = selectedword[i];
+      gridIndex = this.selectedword[i];
       if (gridIndex > -1)
-        word += letters.substring(gridIndex, gridIndex+1);
+        word += this.letters.substring(gridIndex, gridIndex+1);
       else
         return word;
     }
@@ -217,7 +224,7 @@ public class TargetGridView extends View implements OnTouchListener {
   }
 
   public void setLetterTouchedListener(LetterTouchedHandler handler) {
-    _letterTouchedHandler = handler;
+    this._letterTouchedHandler = handler;
   }
 
   // Handles touch events to the grid.
@@ -229,25 +236,25 @@ public class TargetGridView extends View implements OnTouchListener {
   public boolean onTouch(View v, MotionEvent event) {
     boolean handled = false;
     int index = 0;
-    if (gameActive == false)
+    if (this.gameActive == false)
       return true;
     switch(event.getAction()) {
     case MotionEvent.ACTION_DOWN : {
       index = eventToLetterIndex(event);
-      if (highlights[index])
+      if (this.highlights[index])
         return true; // return if letter already highlighted
-      highlights[index] = true;
+      this.highlights[index] = true;
       handled = true;
       invalidate();
       for (int i = 0 ; i < 9 ; i++) {
-        if (selectedword[i] == -1) {
-          selectedword[i] = index;
+        if (this.selectedword[i] == -1) {
+          this.selectedword[i] = index;
           break;
         }
       }
       // Log.d("Target", "Selectedword: " + selectedword);
-      if (_letterTouchedHandler != null)
-        _letterTouchedHandler.handleLetterTouched(index);
+      if (this._letterTouchedHandler != null)
+        this._letterTouchedHandler.handleLetterTouched(index);
     }
     }
     return handled;

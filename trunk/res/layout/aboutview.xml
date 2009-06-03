@@ -47,7 +47,7 @@ no foreign words, no words with initial capital, no hyphenated words."
 				android:textStyle="bold"
 				android:textColor="#ffffff" />	
 			<TextView android:id="@+id/aboutVersionCode"
-				android:text="1.2"
+				android:text="1.2.1"
 				android:layout_width="fill_parent" 
 				android:layout_height="wrap_content"
 				android:paddingLeft="15px"					
