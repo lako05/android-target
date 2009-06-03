@@ -24,6 +24,13 @@
 				android:paddingLeft="15px"
 				android:textStyle="bold"
 				android:textColor="#ffffff" />
+			<TextView android:text="v1.2.1: Fixed 1.2 SMH import freeze."
+				android:layout_width="fill_parent" 
+				android:layout_height="wrap_content"
+				android:textColorLink="#ffffff"
+				android:paddingLeft="15px"	
+				android:paddingBottom="10px"		
+				android:textColor="#ffffff" />
 			<TextView android:text="v1.2: smh.com.au import, game size selection, appearance improved, added changelog."
 				android:layout_width="fill_parent" 
 				android:layout_height="wrap_content"

@@ -46,6 +46,7 @@ public class SmhImport implements Runnable {
     this.pastPuzzleUrls = new ArrayList<String>();
     this.currentPuzzleLetters = new String();
     String pageContent;
+
     pageContent = FetchPage(SMH_PUZZLE_URL + this.fetchPuzzleDate + SMH_TARGET_URL);
 
     Log.d("TargetSMH", "Fetched " + pageContent.length() + " bytes.");
@@ -71,6 +72,10 @@ public class SmhImport implements Runnable {
     HttpGet request = new HttpGet(String.format(url));
     String pageContent = "";
     HttpResponse response;
+    int downloadSize = 0;
+    int totalRead = 0;
+    int len;
+    Message msg;
     try {
       response = client.execute(request);
       StatusLine status = response.getStatusLine();
@@ -78,8 +83,19 @@ public class SmhImport implements Runnable {
       if (status.getStatusCode() == 200) {
         HttpEntity entity = response.getEntity();
         InputStream instream = entity.getContent();
+        // downloadSize = (int)entity.getContentLength();
+        downloadSize = 40000; // Dummy for now, SMH no give content-length
+        msg = Message.obtain();
+        msg.what = MainActivity.DOWNLOAD_STARTING;
+        msg.arg1 = downloadSize;
+        MainActivity.currentInstance.progressHandler.sendMessage(msg);
         byte buf[] = new byte[8192];
-        while(instream.read(buf) > 0) {
+        while((len = instream.read(buf)) > 0) {
+          totalRead += len;
+          msg = Message.obtain();
+          msg.what = MainActivity.DOWNLOAD_PROGRESS;
+          msg.arg1 = 100 * totalRead / downloadSize;
+          MainActivity.currentInstance.progressHandler.sendMessage(msg);
           pageContent = pageContent.concat(new String(buf));
         }
       }
@@ -88,6 +104,9 @@ public class SmhImport implements Runnable {
     } catch (IOException e) {
       e.printStackTrace();
     }
+    msg = Message.obtain();
+    msg.what = MainActivity.DOWNLOAD_COMPLETE;
+    MainActivity.currentInstance.progressHandler.sendMessage(msg);
     return pageContent;
   }
 }

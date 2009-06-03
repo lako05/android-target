@@ -28,12 +28,9 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
-import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.AnimationUtils;
-import android.view.animation.LayoutAnimationController;
-import android.view.animation.TranslateAnimation;
 import android.view.animation.Animation.AnimationListener;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -45,7 +42,12 @@ import android.widget.AdapterView.OnItemClickListener;
 public class MainActivity extends Activity {
 
   public static final int DIALOG_FETCHING = 0;
+  public static final int DIALOG_DOWNLOADING = 1;
   public static final int CLEAR_TEXTBOX = 100;
+  
+  public static final int DOWNLOAD_STARTING = 0;
+  public static final int DOWNLOAD_PROGRESS = 1;
+  public static final int DOWNLOAD_COMPLETE = 2;
   
   // The main grid object.
   public TargetGridView targetGrid;
@@ -280,6 +282,24 @@ public class MainActivity extends Activity {
     }
   };
 
+  // Handles progress messages for the SMH download feature.
+  public Handler progressHandler = new Handler() {
+    public void handleMessage(Message msg) {
+      switch (msg.what) {
+      case DOWNLOAD_STARTING:
+        progressDialog.setIndeterminate(false);
+        break;
+      case DOWNLOAD_PROGRESS:
+        progressDialog.setProgress(msg.arg1);
+        break;
+      case DOWNLOAD_COMPLETE:
+        MainActivity.this.dismissDialog(MainActivity.DIALOG_DOWNLOADING);
+        showDialog(MainActivity.DIALOG_FETCHING);
+        break;
+      }
+    }
+  };
+
   public void onPause() {
     this.savedGame.Save();
     super.onPause();
@@ -293,7 +313,16 @@ public class MainActivity extends Activity {
       progressDialog.setMessage("Please wait...");
       progressDialog.setIndeterminate(false);
       progressDialog.setCancelable(true);
-        return progressDialog;
+      return progressDialog;
+    } else if (id == DIALOG_DOWNLOADING) {
+      progressDialog = new ProgressDialog(this);
+      progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+      progressDialog.setTitle("Downloading puzzle..");
+      progressDialog.setMessage("Please wait...");
+      progressDialog.setIndeterminate(true);
+      progressDialog.setProgress(0);
+      progressDialog.setMax(100);
+      return progressDialog;
     }
     return null;
   }
@@ -412,18 +441,16 @@ public class MainActivity extends Activity {
   private void selectGameType () {
     String[] choices;
     if (preferences.getBoolean("smhimport", false)) {
-      choices = new String[5];
-      choices[0] = "1-20 words";
-      choices[1] = "20-50 words";
-      choices[2] = "50-100 words";
-      choices[3] = "100+ words";
-      choices[4] = "Todays SMH";
-    } else {
       choices = new String[4];
-      choices[0] = "1-20 words";
-      choices[1] = "20-50 words";
-      choices[2] = "50-100 words";
-      choices[3] = "100+ words";
+      choices[0] = "1-30 words";
+      choices[1] = "30-75 words";
+      choices[2] = "75+ words";
+      choices[3] = "Todays SMH";
+    } else {
+      choices = new String[3];
+      choices[0] = "1-30 words";
+      choices[1] = "30-75 words";
+      choices[2] = "100+ words";
     }
     new AlertDialog.Builder(this)
     .setTitle("New Game")
@@ -436,33 +463,31 @@ public class MainActivity extends Activity {
         MainActivity.this.setGameState(false);
         MainActivity.this.targetCounts.setText("Getting words..");
         
-        showDialog(MainActivity.DIALOG_FETCHING);
-        
         Message msg = Message.obtain();
         msg.what = DictionaryThread.MESSAGE_GET_NINELETTER;
         switch (which) {
           case 0:
             msg.arg1 = 1;
-            msg.arg2 = 20;
+            msg.arg2 = 30;
             break;
           case 1:
-            msg.arg1 = 20;
-            msg.arg2 = 50;
+            msg.arg1 = 30;
+            msg.arg2 = 75;
             break;
           case 2:
-            msg.arg1 = 50;
-            msg.arg2 = 100;
-            break;
-          case 3:
-            msg.arg1 = 100;
+            msg.arg1 = 75;
             msg.arg2 = 1000;
             break;
-          case 4:
+          case 3:
             msg.what = DictionaryThread.MESSAGE_GET_SMH_NINELETTER;
             break;
         }
+        
+        showDialog(msg.what == DictionaryThread.MESSAGE_GET_SMH_NINELETTER ? 
+            MainActivity.DIALOG_DOWNLOADING : MainActivity.DIALOG_FETCHING);
+        
         DictionaryThread.currentInstance.messageHandler.sendMessage(msg);
-
+        
         MainActivity.this.InitPlayerWords();
         MainActivity.this.playerWordsAdapter.notifyDataSetChanged();
         MainActivity.this.showWordMessage("");
