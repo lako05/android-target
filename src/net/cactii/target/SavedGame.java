@@ -41,6 +41,8 @@ public class SavedGame {
         writer.write("active\n");
       else
         writer.write("inactive\n");
+      writer.write(this.activity.countDown.initialTime + "\n");
+      writer.write(this.activity.countDown.remainingTime + "\n");
       writer.write(DictionaryThread.currentInstance.currentNineLetter.word + "\n");
       writer.write(DictionaryThread.currentInstance.currentNineLetter.shuffled + "\n");
       for (String word : DictionaryThread.currentInstance.validWords)
@@ -66,7 +68,8 @@ public class SavedGame {
   }
 
   // restore from the above saved file
-  public void Restore() {
+  // Returns whether a game was successfully restored
+  public boolean Restore() {
     String line = null;
     BufferedReader br = null;
     InputStream ins = null;
@@ -76,11 +79,15 @@ public class SavedGame {
     ArrayList<String> validWords = new ArrayList<String>();
     ArrayList<PlayerWord> playerWords = new ArrayList<PlayerWord>();
     String activeState = "";
+    String initialTime = "0";
+    String remainingTime = "0";
 
     try {
       ins = new FileInputStream(new File(MainActivity.saveFilename));
       br = new BufferedReader(new InputStreamReader(ins), 8192);
       activeState = br.readLine();
+      initialTime = br.readLine();
+      remainingTime = br.readLine();
       currentNineLetter = br.readLine();
       currentShuffled = br.readLine();
 
@@ -118,7 +125,7 @@ public class SavedGame {
         validWords.size() < 1 ||
         activeState.contains("active") == false) {
       Log.d("Target", "Error restoring game");
-      return;
+      return false;
     }
 
     // Populate the game with the words, letter, etc.
@@ -135,7 +142,7 @@ public class SavedGame {
     this.activity.playerWordList.setVisibility(View.VISIBLE);
     this.activity.playerWordsAdapter.notifyDataSetChanged();
     this.activity.setGameState(true);
-    if (this.activity.preferences.getBoolean("livescoring", false)) {
+    if (this.activity.preferences.getBoolean("livescoring", true)) {
       this.activity.showWordCounts(this.activity.countCorrectWords());
     } else
       this.activity.showWordCounts(this.activity.CountPlayerWords());
@@ -144,6 +151,13 @@ public class SavedGame {
       this.activity.scoreAllWords();
     } else
       this.activity.setGameState(true);
+    this.activity.countDown.end();
+    if (Integer.parseInt(initialTime) > 0) {
+      this.activity.countDown.enabled = true;
+      this.activity.countDown.begin(Integer.parseInt(initialTime),
+                                    Integer.parseInt(remainingTime));
+    }
     Log.d("Target", "Restored game successfully.");
+    return true;
   }
 }

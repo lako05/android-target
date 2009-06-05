@@ -19,6 +19,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -35,6 +36,7 @@ import android.view.animation.Animation.AnimationListener;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
@@ -48,6 +50,7 @@ public class MainActivity extends Activity {
   public static final int DOWNLOAD_STARTING = 0;
   public static final int DOWNLOAD_PROGRESS = 1;
   public static final int DOWNLOAD_COMPLETE = 2;
+  public static final int COUNTDOWN_PING = 3;
   
   // The main grid object.
   public TargetGridView targetGrid;
@@ -61,6 +64,9 @@ public class MainActivity extends Activity {
   
   // 'Fetching words' dialog
   private ProgressDialog progressDialog;
+  public ProgressBar countDownBar;
+  public CountDown countDown;
+  public TextView timeRemaining;
   
   // 'Submit' button.
   private Button submitWord;
@@ -124,6 +130,9 @@ public class MainActivity extends Activity {
     this.targetCounts = (TextView)findViewById(R.id.targetCounts);
     this.playerWordList = (ListView)findViewById(R.id.playerWordList);
     this.bottomText = (TextView)findViewById(R.id.bottomText);
+    this.countDownBar = (ProgressBar)findViewById(R.id.gameTimer);
+    this.timeRemaining = (TextView)findViewById(R.id.timeRemaining);
+    this.countDown = new CountDown(this);
    
     this.preferences = PreferenceManager.getDefaultSharedPreferences(this);
     this.prefeditor = preferences.edit();
@@ -163,28 +172,7 @@ public class MainActivity extends Activity {
     // Clicking 'submit' verifies the word then adds it to the list.
     this.submitWord.setOnClickListener(new OnClickListener() {
       public void onClick(View v) {
-        String word = targetGrid.getSelectedWord();
-        String message = "";
-        if (word.length() < 4)
-          message = "Must be at least 4 letters.";
-        else if (!word.contains(DictionaryThread.currentInstance.currentNineLetter.magicLetter))
-          message = "Must contain the middle letter: " + DictionaryThread.currentInstance.currentNineLetter.magicLetter;
-        else if (MainActivity.this.playerHasWord(word))
-          message = "You already have that word.";
-        if (message != "") {
-          Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-          return;
-        }
-        animateTextBox();
-        PlayerWord playerWord = new PlayerWord(word);
-        MainActivity.this.playerWords.add(playerWord);
-        targetGrid.clearGrid();
-        if (preferences.getBoolean("livescoring", false)) {
-        	MainActivity.this.scoreWord(playerWord);
-          MainActivity.this.showWordCounts(MainActivity.this.countCorrectWords());
-        } else
-          MainActivity.this.showWordCounts(MainActivity.this.CountPlayerWords());
-        MainActivity.this.playerWordList.setSelectionFromTop(MainActivity.this.playerWords.size()-1, 10);
+        MainActivity.this.handleSubmitClicked();
       }
     });
 
@@ -243,7 +231,7 @@ public class MainActivity extends Activity {
     // Dictionary thread is started, will fetch our words.
     this.dictionaryThread = new Thread(new DictionaryThread());
     this.dictionaryThread.start();
-
+    
     this.setGameState(false);
   }
   
@@ -268,10 +256,14 @@ public class MainActivity extends Activity {
         showWordCounts(0);
         MainActivity.this.dismissDialog(MainActivity.DIALOG_FETCHING);
         MainActivity.this.animateTargetGrid();
+        MainActivity.this.countDown.enabled = MainActivity.this.preferences.getBoolean("timedgame", true);
+        MainActivity.this.countDown.begin(0, 0);
         break;
       case DictionaryThread.MESSAGE_DICTIONARY_READY :
         // Called after game is restored when dictionary is ready.
-        MainActivity.this.savedGame.Restore();
+        if (MainActivity.this.savedGame.Restore()) {
+          MainActivity.this.animateTargetGrid();
+        }
         break;
       case DictionaryThread.MESSAGE_FAIL_SMH_NINELETTER :
         MainActivity.this.dismissDialog(MainActivity.DIALOG_FETCHING);
@@ -299,9 +291,35 @@ public class MainActivity extends Activity {
       }
     }
   };
+  
+  public void handleSubmitClicked() {
+    String word = targetGrid.getSelectedWord();
+    String message = "";
+    int addedSeconds = 0;
+    if (word.length() < 4)
+      message = "Must be at least 4 letters.";
+    else if (!word.contains(DictionaryThread.currentInstance.currentNineLetter.magicLetter))
+      message = "Must contain the middle letter: " + DictionaryThread.currentInstance.currentNineLetter.magicLetter;
+    else if (this.playerHasWord(word))
+      message = "You already have that word.";
+    if (message != "") {
+      Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    PlayerWord playerWord = new PlayerWord(word);
+    this.playerWords.add(playerWord);
+    targetGrid.clearGrid();
+    this.scoreWord(playerWord);
+    this.showWordCounts(this.countCorrectWords());
+    this.playerWordList.setSelectionFromTop(this.playerWords.size()-1, 10);
+    if (playerWord.result == PlayerWord.RESULT_OK)
+      addedSeconds = this.countDown.addWord(playerWord.word.length());
+    animateTextBox(playerWord.result, addedSeconds);
+  }
 
   public void onPause() {
     this.savedGame.Save();
+    this.countDown.end();
     super.onPause();
   }
     
@@ -367,24 +385,34 @@ public class MainActivity extends Activity {
     this.targetGrid.startAnimation(animation);
   }
   
-  public void animateTextBox() {
+  public void animateTextBox(int result, int addedSeconds) {
 
     Animation animation = AnimationUtils.loadAnimation(this, R.anim.textboxfade);
 
     animation.setAnimationListener(new AnimationListener() {
-
       @Override
       public void onAnimationEnd(Animation animation) {
+        enteredWordBox.setTextColor(0xFF000000); 
         MainActivity.currentInstance.enteredWordBox.setText(""); 
-        MainActivity.currentInstance.playerWordsAdapter.notifyDataSetChanged();
+        enteredWordBox.setGravity(Gravity.LEFT);
+        playerWordsAdapter.notifyDataSetChanged();
       }
-
       @Override
       public void onAnimationRepeat(Animation animation) {}
-
       @Override
       public void onAnimationStart(Animation animation) {}
     });
+    enteredWordBox.setGravity(Gravity.CENTER);
+    if (result == PlayerWord.RESULT_OK) {
+      enteredWordBox.setTextColor(0xFF008000);
+      if (countDown.enabled)
+        enteredWordBox.setText("GOOD! +" + addedSeconds + "s");
+      else
+        enteredWordBox.setText("GOOD!");
+    } else {
+      enteredWordBox.setTextColor(0xFFF00000);
+      enteredWordBox.setText("UNKNOWN!");
+    }
     this.enteredWordBox.startAnimation(animation);
   }
 
@@ -548,9 +576,10 @@ public class MainActivity extends Activity {
 
   // Score the player's words.
   public void scoreAllWords() {
-	int correctUserWords;
-	
-	correctUserWords = countCorrectWords();
+  	int correctUserWords;
+  	
+  	this.countDown.end();
+  	correctUserWords = countCorrectWords();
     PlayerWord header = new PlayerWord("MISSED WORDS");
     header.result = PlayerWord.RESULT_HEADER;
     this.playerWords.add(header);
@@ -560,7 +589,7 @@ public class MainActivity extends Activity {
       resultWord.result = PlayerWord.RESULT_MISSED;
       this.playerWords.add(resultWord);
     }
-
+  
     // Then show all other missed words
     for (String validWord : DictionaryThread.currentInstance.validWords) {
       if (playerHasWord(validWord) == false &&
