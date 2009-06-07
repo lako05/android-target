@@ -35,6 +35,7 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.Animation.AnimationListener;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -47,16 +48,20 @@ public class MainActivity extends Activity {
   public static final int DIALOG_DOWNLOADING = 1;
   public static final int CLEAR_TEXTBOX = 100;
   
+  public static final int ACTIVITY_NEWGAME = 7;
+  
   public static final int DOWNLOAD_STARTING = 0;
   public static final int DOWNLOAD_PROGRESS = 1;
   public static final int DOWNLOAD_COMPLETE = 2;
   public static final int COUNTDOWN_PING = 3;
   
+  // Top area of the game
+  public LinearLayout playArea;
   // The main grid object.
   public TargetGridView targetGrid;
   
   // Current word is displayed here.
-  private TextView enteredWordBox;
+  public TextView enteredWordBox;
   public AnimationSet animationSet;
   
   // 'Clear' button
@@ -103,10 +108,7 @@ public class MainActivity extends Activity {
   public SavedGame savedGame = null;
   
   public TextView bottomText = null;
-  
-  public int listActionDelete;
-  public int listActionDefine;
-
+ 
   private static void setCurrent(MainActivity current){
     MainActivity.currentInstance = current;
   }
@@ -123,16 +125,27 @@ public class MainActivity extends Activity {
     
     MainActivity.setCurrent(this);
     setContentView(R.layout.main);
+    this.playArea = (LinearLayout)findViewById(R.id.playArea);
     this.targetGrid = (TargetGridView)findViewById(R.id.targetGrid);
     this.enteredWordBox = (TextView)findViewById(R.id.enteredWord);
     this.clearWord = (Button)findViewById(R.id.clearWord);
     this.submitWord = (Button)findViewById(R.id.submitWord);
     this.targetCounts = (TextView)findViewById(R.id.targetCounts);
     this.playerWordList = (ListView)findViewById(R.id.playerWordList);
-    this.bottomText = (TextView)findViewById(R.id.bottomText);
+    
+    // Configure the countdown timer
     this.countDownBar = (ProgressBar)findViewById(R.id.gameTimer);
     this.timeRemaining = (TextView)findViewById(R.id.timeRemaining);
     this.countDown = new CountDown(this);
+    this.countDown.setCountDownTimeExpiredListener(this.countDown.new CountDownTimeExpiredListener() {
+      @Override
+      public void OnCountDownTimeExpired() {
+        Log.d("Target", "Countdown expired!!");
+        setGameState(false);
+        enteredWordBox.setText("TIME'S UP!");
+        scoreAllWords();
+      }
+    });
    
     this.preferences = PreferenceManager.getDefaultSharedPreferences(this);
     this.prefeditor = preferences.edit();
@@ -146,7 +159,7 @@ public class MainActivity extends Activity {
     this.enteredWordBox.setTypeface(face);
 
     // When a letter on the grid is touched, update the current word box.
-    this.targetGrid.setLetterTouchedListener(new LetterTouchedHandler() {
+    this.targetGrid.setLetterTouchedListener(this.targetGrid.new LetterTouchedHandler() {
       public void handleLetterTouched(int index) {
         enteredWordBox.setText(targetGrid.getSelectedWord());
       }
@@ -180,35 +193,15 @@ public class MainActivity extends Activity {
     	public void onItemClick(AdapterView adapterView, View view, int position, long id) {
     	  PlayerWord word = MainActivity.this.playerWords.get(position);
     	  MainActivity.this.currentSelectedWord = word;
-    		String[] choices;
-    		if (word.result != PlayerWord.RESULT_HEADER && word.result != PlayerWord.RESULT_MISSED &&
-    		    MainActivity.this.targetGrid.gameActive) {
-    		  choices = new String[2];
-    		  choices[0] = new String("Delete word");
-    		  MainActivity.this.listActionDelete = 0;
-    		  choices[1] = new String("Find definition");
-    		  MainActivity.this.listActionDefine = 1;
-    		} else {
-    		  choices = new String[1];
-    		  choices[0] = new String("Find definition");
-    		  MainActivity.this.listActionDefine = 0;
-    		  MainActivity.this.listActionDelete = 2;
-    		}
+    		String[] choices = new String[1];
+    		choices[0] = new String("Find definition");
     		new AlertDialog.Builder(view.getContext())
         .setTitle("Selected: " + word.word)
         .setItems(choices, new DialogInterface.OnClickListener() {
           @Override
           public void onClick(DialogInterface dialog, int which) {
             PlayerWord word = MainActivity.this.currentSelectedWord;
-            Log.d("Target", "Selected was: " + which + " for " + word.word);
-            if (which == MainActivity.this.listActionDelete) {
-              if (MainActivity.this.targetGrid.gameActive == false)
-                return;
-              MainActivity.this.playerWords.remove(MainActivity.this.playerWords.indexOf(word));
-              MainActivity.this.playerWordsAdapter.notifyDataSetChanged();
-              MainActivity.this.showWordCounts(MainActivity.this.CountPlayerWords());
-              Toast.makeText(MainActivity.this, "Deleted: " + word.word, Toast.LENGTH_SHORT).show();
-            } else if (which == MainActivity.this.listActionDefine) {
+            if (which == 0) {
               Intent myIntent = null;
               myIntent = new Intent("android.intent.action.VIEW", Uri.parse("http://www.google.com/" +
                   "search?q=define:" + word.word.toLowerCase()));
@@ -242,6 +235,7 @@ public class MainActivity extends Activity {
         // Dictionary thread sends message that a new 9letter is available.
         String nineLetterWord = (String)msg.obj;
         targetGrid.setLetters(nineLetterWord);
+        playArea.setVisibility(View.VISIBLE);
         setGameState(true);
 
         // This must be posted here. If called in the get_nine_letter handler,
@@ -256,13 +250,18 @@ public class MainActivity extends Activity {
         showWordCounts(0);
         MainActivity.this.dismissDialog(MainActivity.DIALOG_FETCHING);
         MainActivity.this.animateTargetGrid();
-        MainActivity.this.countDown.enabled = MainActivity.this.preferences.getBoolean("timedgame", true);
         MainActivity.this.countDown.begin(0, 0);
         break;
       case DictionaryThread.MESSAGE_DICTIONARY_READY :
         // Called after game is restored when dictionary is ready.
+        ((TextView)findViewById(R.id.starting)).setVisibility(View.GONE);
         if (MainActivity.this.savedGame.Restore()) {
+          playArea.setVisibility(View.VISIBLE);
           MainActivity.this.animateTargetGrid();
+        } else {
+          Intent i = new Intent(MainActivity.this, NewGameActivity.class);
+          startActivityForResult(i, ACTIVITY_NEWGAME);
+          // playArea.setVisibility(View.GONE);
         }
         break;
       case DictionaryThread.MESSAGE_FAIL_SMH_NINELETTER :
@@ -314,7 +313,20 @@ public class MainActivity extends Activity {
     this.playerWordList.setSelectionFromTop(this.playerWords.size()-1, 10);
     if (playerWord.result == PlayerWord.RESULT_OK)
       addedSeconds = this.countDown.addWord(playerWord.word.length());
-    animateTextBox(playerWord.result, addedSeconds);
+
+    // Animate the word result text
+    int animateColour;
+    String animateText;
+    if (playerWord.result == PlayerWord.RESULT_OK) {
+      animateColour = 0xFF008000;
+      animateText = "GOOD!";
+      if (countDown.enabled)
+        animateText += " +" + addedSeconds + "s";
+    } else {
+      animateColour = 0xFFF00000;
+      animateText = "UNKNOWN!";
+    }
+    animateTextBox(animateText, animateColour, R.anim.textboxfade);
   }
 
   public void onPause() {
@@ -385,9 +397,9 @@ public class MainActivity extends Activity {
     this.targetGrid.startAnimation(animation);
   }
   
-  public void animateTextBox(int result, int addedSeconds) {
+  public void animateTextBox(String text, int colour, int animationResource) {
 
-    Animation animation = AnimationUtils.loadAnimation(this, R.anim.textboxfade);
+    Animation animation = AnimationUtils.loadAnimation(this, animationResource);
 
     animation.setAnimationListener(new AnimationListener() {
       @Override
@@ -402,17 +414,9 @@ public class MainActivity extends Activity {
       @Override
       public void onAnimationStart(Animation animation) {}
     });
-    enteredWordBox.setGravity(Gravity.CENTER);
-    if (result == PlayerWord.RESULT_OK) {
-      enteredWordBox.setTextColor(0xFF008000);
-      if (countDown.enabled)
-        enteredWordBox.setText("GOOD! +" + addedSeconds + "s");
-      else
-        enteredWordBox.setText("GOOD!");
-    } else {
-      enteredWordBox.setTextColor(0xFFF00000);
-      enteredWordBox.setText("UNKNOWN!");
-    }
+    this.enteredWordBox.setGravity(Gravity.CENTER);
+    this.enteredWordBox.setText(text);
+    this.enteredWordBox.setTextColor(colour);
     this.enteredWordBox.startAnimation(animation);
   }
 
@@ -444,7 +448,9 @@ public class MainActivity extends Activity {
     boolean supRetVal = super.onOptionsItemSelected(menuItem);
     switch (menuItem.getItemId()) {
     case MENU_NEWWORD : {
-      selectGameType();
+      // selectGameType();
+      Intent i = new Intent(this, NewGameActivity.class);
+      startActivityForResult(i, ACTIVITY_NEWGAME);
       break;
     }
     case MENU_SCORE : {
@@ -466,64 +472,56 @@ public class MainActivity extends Activity {
     return supRetVal;
   }
   
-  private void selectGameType () {
-    String[] choices;
-    if (preferences.getBoolean("smhimport", false)) {
-      choices = new String[4];
-      choices[0] = "1-30 words";
-      choices[1] = "30-75 words";
-      choices[2] = "75+ words";
-      choices[3] = "Todays SMH";
-    } else {
-      choices = new String[3];
-      choices[0] = "1-30 words";
-      choices[1] = "30-75 words";
-      choices[2] = "100+ words";
-    }
-    new AlertDialog.Builder(this)
-    .setTitle("New Game")
-    .setItems(choices, new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface dialog, int which) {
-        enteredWordBox.setText("");
-        MainActivity.this.bottomText.setVisibility(View.GONE);
-        MainActivity.this.playerWordList.setVisibility(View.VISIBLE);
-        MainActivity.this.setGameState(false);
-        MainActivity.this.targetCounts.setText("Getting words..");
-        
-        Message msg = Message.obtain();
-        msg.what = DictionaryThread.MESSAGE_GET_NINELETTER;
-        switch (which) {
-          case 0:
-            msg.arg1 = 1;
-            msg.arg2 = 30;
-            break;
-          case 1:
-            msg.arg1 = 30;
-            msg.arg2 = 75;
-            break;
-          case 2:
-            msg.arg1 = 75;
-            msg.arg2 = 1000;
-            break;
-          case 3:
-            msg.what = DictionaryThread.MESSAGE_GET_SMH_NINELETTER;
-            break;
-        }
-        
-        showDialog(msg.what == DictionaryThread.MESSAGE_GET_SMH_NINELETTER ? 
-            MainActivity.DIALOG_DOWNLOADING : MainActivity.DIALOG_FETCHING);
-        
-        DictionaryThread.currentInstance.messageHandler.sendMessage(msg);
-        
-        MainActivity.this.InitPlayerWords();
-        MainActivity.this.playerWordsAdapter.notifyDataSetChanged();
-        MainActivity.this.showWordMessage("");
-        MainActivity.this.targetGrid.setVisibility(View.INVISIBLE);
-        new File(MainActivity.saveFilename).delete();
+  protected void onActivityResult(int requestCode, int resultCode,
+      Intent data) {
+    Log.d("Target", "Got newgame result: request " + requestCode + " result "
+        + resultCode);
+    if (requestCode != ACTIVITY_NEWGAME || resultCode != Activity.RESULT_OK)
+      return;
+    final Message msg = Message.obtain();
+    Bundle extras = data.getExtras();
+    if (extras.getBoolean("fromsmh")) {
+      msg.what = DictionaryThread.MESSAGE_GET_SMH_NINELETTER;
+    } else{
+      msg.what = DictionaryThread.MESSAGE_GET_NINELETTER;
+      switch (extras.getInt("wordcount")) {
+      case R.id.newWordCount1 :
+        msg.arg1 = 1;
+        msg.arg2 = 30;
+        break;
+      case R.id.newWordCount30 :
+        msg.arg1 = 30;
+        msg.arg2 = 75;
+        break;
+      case R.id.newWordCount75 :
+        msg.arg1 = 75;
+        msg.arg2 = 500;
+      default :
+        return;
       }
-    })
-    .show();
+    }
+    showDialog(msg.what == DictionaryThread.MESSAGE_GET_SMH_NINELETTER ? 
+        MainActivity.DIALOG_DOWNLOADING : MainActivity.DIALOG_FETCHING);
+
+    this.playArea.setVisibility(View.VISIBLE);
+    this.InitPlayerWords();
+    this.playerWordsAdapter.notifyDataSetChanged();
+    this.showWordMessage("");
+    this.timeRemaining.setText("");
+    this.targetCounts.setText("");
+    this.targetGrid.setVisibility(View.INVISIBLE);
+    this.countDown.enabled = extras.getBoolean("timed");
+    new File(MainActivity.saveFilename).delete();
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        // Sleep a fraction, allows main UI to catch up
+        try {
+          Thread.sleep(300);
+        } catch (InterruptedException e) { }
+        DictionaryThread.currentInstance.messageHandler.sendMessage(msg);
+      }
+    }).start();
   }
 
   private boolean playerHasWord(String word) {

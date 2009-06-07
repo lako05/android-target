@@ -138,8 +138,6 @@ public class SavedGame {
       this.activity.playerWords.add(word);
     
     // Restore the UI state
-    this.activity.bottomText.setVisibility(View.GONE);
-    this.activity.playerWordList.setVisibility(View.VISIBLE);
     this.activity.playerWordsAdapter.notifyDataSetChanged();
     this.activity.setGameState(true);
     if (this.activity.preferences.getBoolean("livescoring", true)) {
@@ -149,10 +147,13 @@ public class SavedGame {
     if (activeState.equals("inactive")) {
       this.activity.setGameState(false);
       this.activity.scoreAllWords();
+      this.activity.enteredWordBox.setText("TIME'S UP!");
     } else
       this.activity.setGameState(true);
+    
+    // Reconfigures the countdown timer to the last saved time
     this.activity.countDown.end();
-    if (Integer.parseInt(initialTime) > 0) {
+    if (Integer.parseInt(remainingTime) > 0) {
       this.activity.countDown.enabled = true;
       this.activity.countDown.begin(Integer.parseInt(initialTime),
                                     Integer.parseInt(remainingTime));

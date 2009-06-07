@@ -3,114 +3,206 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@drawable/background"
-    >
-	<RelativeLayout
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content">
-	<net.cactii.target.TargetGridView 
-		android:id="@+id/targetGrid"
-	    android:layout_width="250dp"
-	    android:layout_height="wrap_content" 
-	    android:layout_alignParentRight="true"
-	    android:layout_marginTop="10dp"
-	    android:layout_marginRight="10dp"
-	    android:gravity="center"
-	    android:visibility="invisible"
-	    />
-	 <TextView
-	    android:id = "@+id/targetCounts"
-	    android:layout_width="wrap_content" 
-	    android:layout_height="100dp" 
-	    android:layout_alignParentLeft="true"
-	    android:layout_toLeftOf="@+id/targetGrid"
-	    android:layout_marginTop="10dp"
-	    android:textSize="16dp"
-	    android:textColor="#FF000000"
-	    android:text=""
-	    />
-	 <TextView
-	    android:id = "@+id/timeRemaining"
-	    android:layout_height="30dp" 
-	    android:layout_alignParentLeft="true"
-	    android:layout_toLeftOf="@+id/targetGrid"
-	    android:layout_width="fill_parent"
-	    android:layout_marginTop="5dp"
-	    android:layout_below="@+id/targetCounts"
-	   	android:gravity="center"
-	    android:textSize="24dp"
-	    android:textStyle="bold"
-	    android:textColor="#FF000000"
-	    android:text=""
-	    />
-	    <Button
-		android:id="@+id/clearWord"
-	    android:layout_height="wrap_content" 
-	   	android:layout_width="wrap_content"
-	    android:gravity="center"
-	    android:layout_alignParentLeft="true"
-	   	android:layout_below="@+id/timeRemaining"
-	   	android:layout_marginTop="10dp"
-	    android:textSize="24dp"
-	    android:text="Clear"
-	    />
-
-
-	</RelativeLayout>
-	<LinearLayout
-		android:orientation="horizontal"
-		android:layout_width="fill_parent"
-		android:background="#10000000"
-		android:layout_height="wrap_content">
+    android:background="@drawable/background">
+    <LinearLayout android:id="@+id/playArea"
+    	android:orientation="vertical"
+        android:layout_width="fill_parent"
+    	android:layout_height="wrap_content"
+    	android:visibility="gone">
 		<RelativeLayout
-			android:layout_weight="1"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content">
-			<ProgressBar
-			android:id="@+id/gameTimer"
-		    android:layout_width="fill_parent"
-		    android:layout_height="5dp"
-		    android:layout_marginTop="40dp"
-		    android:progressDrawable="@drawable/progress_horizontal"
-		    android:indeterminate="false"
-		    style="?android:attr/progressBarStyleHorizontal"
-		    android:visibility="invisible"
-		    />
-			<TextView
-				android:id="@+id/enteredWord"
-			    android:layout_width="fill_parent"
+			<net.cactii.target.TargetGridView 
+				android:id="@+id/targetGrid"
+			    android:layout_width="250dp"
 			    android:layout_height="wrap_content" 
-			    android:textSize="28dp"
-			    android:textStyle="bold"
-			    android:background="#00DFDFC0"
+			    android:layout_alignParentRight="true"
+			    android:layout_marginTop="10dp"
+			    android:layout_marginRight="10dp"
+			    android:gravity="center"
+			    android:visibility="invisible"/>
+			 <TextView
+			    android:id = "@+id/targetCounts"
+			    android:layout_width="wrap_content" 
+			    android:layout_height="100dp" 
+			    android:layout_alignParentLeft="true"
+			    android:layout_toLeftOf="@+id/targetGrid"
+			    android:layout_marginTop="10dp"
+			    android:textSize="16dp"
 			    android:textColor="#FF000000"
-			    android:cursorVisible="true"
-			    android:text=""
-			/>
+			    android:text=""/>
+			 <TextView
+			    android:id = "@+id/timeRemaining"
+			    android:layout_height="30dp" 
+			    android:layout_alignParentLeft="true"
+			    android:layout_toLeftOf="@+id/targetGrid"
+			    android:layout_width="fill_parent"
+			    android:layout_marginTop="5dp"
+			    android:layout_below="@+id/targetCounts"
+			   	android:gravity="center"
+			    android:textSize="24dp"
+			    android:textStyle="bold"
+			    android:textColor="#FF000000"
+			    android:text=""/>
+			    <Button
+				android:id="@+id/clearWord"
+			    android:layout_height="wrap_content" 
+			   	android:layout_width="wrap_content"
+			    android:gravity="center"
+			    android:layout_alignParentLeft="true"
+			   	android:layout_below="@+id/timeRemaining"
+			   	android:layout_marginTop="10dp"
+			    android:textSize="24dp"
+			    android:text="Clear"/>
 		</RelativeLayout>
-	    <Button
-		android:id="@+id/submitWord"
-	    android:layout_width="wrap_content" 
-	    android:layout_height="wrap_content" 
-	    android:layout_alignParentRight="true"
-	    android:textSize="16dp"
-	    android:paddingTop="1px"
-	    android:paddingBottom="1px"
-	    android:text="Submit"
-	    />
-	</LinearLayout>
-	<ListView
+		<LinearLayout
+			android:orientation="horizontal"
+			android:layout_width="fill_parent"
+			android:background="#10000000"
+			android:layout_height="wrap_content">
+			<RelativeLayout
+				android:layout_weight="1"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content">
+				<ProgressBar
+				android:id="@+id/gameTimer"
+			    android:layout_width="fill_parent"
+			    android:layout_height="5dp"
+			    android:layout_marginTop="40dp"
+			    android:progressDrawable="@drawable/progress_horizontal"
+			    android:indeterminate="false"
+			    style="?android:attr/progressBarStyleHorizontal"
+			    android:visibility="invisible"/>
+				<TextView
+					android:id="@+id/enteredWord"
+				    android:layout_width="fill_parent"
+				    android:layout_height="wrap_content" 
+				    android:textSize="28dp"
+				    android:textStyle="bold"
+				    android:background="#00DFDFC0"
+				    android:textColor="#FF000000"
+				    android:cursorVisible="true"
+				    android:text=""/>
+			</RelativeLayout>
+		    <Button
+			android:id="@+id/submitWord"
+		    android:layout_width="wrap_content" 
+		    android:layout_height="wrap_content" 
+		    android:layout_alignParentRight="true"
+		    android:textSize="16dp"
+		    android:paddingTop="1px"
+		    android:paddingBottom="1px"
+		    android:text="Submit"/>
+		</LinearLayout>
+		<ListView
 		android:id="@+id/playerWordList"
 		android:clickable="false"
-		android:visibility="gone"
 		android:cacheColorHint="#00000000"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"/>
+	</LinearLayout>
+	<TableLayout
+	 android:id="@+id/newGameArea"
+    	android:stretchColumns="0"
+        android:layout_width="fill_parent"
+    	android:layout_height="fill_parent"
+    	android:layout_margin="15dp"
+    	android:visibility="gone">
+    	<TableRow>
+			<TextView
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:text="Start new game..."
+				android:textSize="24dp"
+				android:layout_column="0"
+				android:layout_span="3"
+				android:textColor="#FF000000"/>
+		</TableRow>
+		<TableRow android:layout_marginTop="30dp"
+		android:background="#10000040">
+			<TextView
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="From smh.com.au:"
+				android:layout_column="0"
+				android:layout_span="2"
+				android:textSize="16dp"
+				android:textColor="#FF000000"/>
+			<CheckBox
+				android:id="@+id/newGameFromSMH"
+				android:layout_column="2"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"/>
+		</TableRow>
+		<TableRow android:id="@+id/newGamewordCounts"
+				android:background="#10000040"
+				 android:layout_marginTop="30dp">
+			<TextView
+				android:layout_width="wrap_content"
+				android:layout_height="fill_parent"
+				android:text="Word count:"
+				android:textSize="16dp"
+				android:layout_column="0"
+				android:textColor="#FF000000"/>
+		</TableRow>
+		<TableRow android:background="#10000040">
+			<RadioGroup
+				android:id="@+id/newGameWordCount"
+				android:layout_column="0"
+				android:layout_span="3"
+				android:layout_gravity="right"
+				android:orientation="horizontal">
+				<RadioButton
+					android:id="@+id/newWordCount1"
+					android:text="1-30"
+					android:textColor="#FF000000"
+					android:textSize="14dp"/>
+				<RadioButton
+					android:id="@+id/newWordCount30"
+					android:layout_marginLeft="30dp"
+					android:text="30-75"
+					android:textColor="#FF000000"
+					android:textSize="14dp"/>
+				<RadioButton
+					android:id="@+id/newWordCount75"
+					android:layout_marginLeft="30dp"
+					android:text="75+"
+					android:textColor="#FF000000"
+					android:textSize="14dp"/>
+			</RadioGroup>
+		</TableRow>
+		<TableRow android:layout_marginTop="30dp" android:background="#10000040">
+			<TextView
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="Timed game, beat the clock:"
+				android:layout_column="0"
+				android:layout_span="2"
+				android:textSize="16dp"
+				android:textColor="#FF000000"/>
+			<CheckBox
+				android:id="@+id/newGameTimed"
+				android:layout_column="2"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"/>
+		</TableRow>
+		<TableRow android:layout_marginTop="30dp">
+			<Button
+				android:id="@+id/newGameStart"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center"
+				android:layout_span="3"
+				android:text="Start Game"
+				android:textSize="18dp"/>
+		</TableRow>
+	</TableLayout>
 	<TextView
-		android:id="@+id/bottomText"
+		android:id="@+id/starting"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
-		android:text="Press Menu for instructions or to start."
+		android:gravity="center"
+		android:text="Starting..."
 		android:textColor="#FF000000"
-		/>
+		android:textSize="36dp"/>
 </LinearLayout>

@@ -2,6 +2,8 @@ package net.cactii.target;
 
 import java.util.Date;
 
+import net.cactii.target.TargetGridView.LetterTouchedHandler;
+
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
@@ -10,6 +12,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class CountDown {
+  
+  // Abstract class for the coutdown listener
+  public abstract class CountDownTimeExpiredListener {
+    public abstract void OnCountDownTimeExpired();
+  }
   
   public static final int COUNTDOWN_PING = 0;
   
@@ -30,6 +37,8 @@ public class CountDown {
   public boolean active;
   // Tick timer (ie keeps track of realtime
   public long lastRealTime;
+  // Listener for countdown expired
+  public CountDownTimeExpiredListener _countDownExpiredListener = null;
   
   CountDown(MainActivity activity) {
     this.main = activity;
@@ -46,9 +55,11 @@ public class CountDown {
   public void begin(int initialTime, int remainingTime) {
     if (!this.enabled) {
       this.main.timeRemaining.setVisibility(View.INVISIBLE);
+      this.progressBar.setVisibility(View.INVISIBLE);
       return;
     }
     this.main.timeRemaining.setVisibility(View.VISIBLE);
+    this.progressBar.setVisibility(View.VISIBLE);
     if (initialTime == 0) {
       int numWords = DictionaryThread.currentInstance.validWords.size();
       this.initialTime = numWords * 40;
@@ -60,7 +71,7 @@ public class CountDown {
     }
     this.active = true;
     startCountdown();
-    this.progressBar.setMax(100);
+    this.progressBar.setMax(1000);
     updateProgressBar();
     this.progressBar.setVisibility(View.VISIBLE);
   }
@@ -89,13 +100,21 @@ public class CountDown {
     return timeAdded/10;
   }
   
+  // Called when the coutdown timer expires
   private void timerExpired() {
     Toast.makeText(this.main, "Out of time!", Toast.LENGTH_LONG).show();
+    if (this._countDownExpiredListener != null)
+      this._countDownExpiredListener.OnCountDownTimeExpired();
+  }
+ 
+  // Set handler for when countdown timer is expired.
+  public void setCountDownTimeExpiredListener(CountDownTimeExpiredListener handler) {
+    this._countDownExpiredListener = handler;
   }
   
   private void updateProgressBar() {
     if (this.initialTime > 0) {
-      int percent = (this.remainingTime * 100) / this.initialTime;
+      int percent = (this.remainingTime * 1000) / this.initialTime;
       updateProgressHue();
       this.progressBar.setProgress(percent);
     }
@@ -113,21 +132,21 @@ public class CountDown {
     float green;
     float red;
     float alpha;
-    if (progress > 50) {
+    if (progress > 500) {
       green = 0xFF;
-      red = 255 * ((float)(100-progress) / 50);
+      red = 255 * ((float)(1000-progress) / 500);
     } else {
-      green = 255 * ((float)progress/50);
+      green = 255 * ((float)progress/500);
       red = 255;
     }
-    alpha = (255 * ((float)(100-progress) / 100))/4;
+    alpha = (255 * ((float)(1000-progress) / 1000))/4;
     int color = ((int)alpha << 24) + ((int)red << 16) + ((int)green << 8) ;
     this.progressBar.setBackgroundColor(color);
   }
   
   public Handler timerHandler = new Handler() {
     public void handleMessage(Message msg) {
-      if (CountDown.this.active) {
+      if (CountDown.this.active && CountDown.this.enabled) {
         Date curTime = new Date();
         if (curTime.getTime() - lastRealTime < 500)
           return;
@@ -140,6 +159,8 @@ public class CountDown {
           updateProgressBar();
         }
         updateTimeRemainingLabel();
+      } else {
+        remainingTime = initialTime = 0;
       }
     }
   };
