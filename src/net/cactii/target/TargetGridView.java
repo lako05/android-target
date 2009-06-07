@@ -9,15 +9,18 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 
 public class TargetGridView extends View implements OnTouchListener {
 
-  public LetterTouchedHandler _letterTouchedHandler = null;
-
+  public TargetGridView.LetterTouchedHandler _letterTouchedHandler = null;
+  
+  public abstract class LetterTouchedHandler {
+    public abstract void handleLetterTouched(int index);
+  }
+  
   // Initialise some colours
   private static final int backgroundColor = 0x00FFFFFF;
   private static final int gridColor = Color.BLACK;
@@ -128,7 +131,7 @@ public class TargetGridView extends View implements OnTouchListener {
 
     canvas.drawARGB(0, 255, 255, 255);
 
-    if (this.letters != "")
+    if (!this.letters.equals(""))
       for (int index = 0 ; index < 9 ; index++)
         drawLetter(canvas, index, this.highlights[index]);
 
@@ -178,6 +181,7 @@ public class TargetGridView extends View implements OnTouchListener {
   }
 
   // Supplies a new word to the grid.
+  // Arg must be a 9 letter string, filling the grid L-R, T-B
   // Words that arent 9 letters are ignored.
   public void setLetters(String word) {
     if (word.length() == 9) {
