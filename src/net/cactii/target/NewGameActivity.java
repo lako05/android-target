@@ -1,9 +1,12 @@
 package net.cactii.target;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -22,6 +25,7 @@ public class NewGameActivity extends Activity {
   private RadioGroup newGameWordCount;
   private CheckBox newGameTimed;
   private Button newGameStart;
+  private Button newGameHelp;
   
   /** Called when the activity is first created. */
   @Override
@@ -37,6 +41,7 @@ public class NewGameActivity extends Activity {
     this.newGameWordCount = (RadioGroup)findViewById(R.id.newGameWordCount);
     this.newGameTimed = (CheckBox)findViewById(R.id.newGameTimed);
     this.newGameStart = (Button)findViewById(R.id.newGameStart);
+    this.newGameHelp = (Button)findViewById(R.id.newGameHelp);
     this.newGameFromSMH.setOnCheckedChangeListener(new OnCheckedChangeListener() {
       @Override
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -58,5 +63,49 @@ public class NewGameActivity extends Activity {
         finish();
       }
     });
+    this.newGameHelp.setOnClickListener(new OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        openHelpDialog();
+      }
+    });
+  }
+  
+  // The two methods below are duplicates from MainActivity
+  // TODO: Merge back into one file
+  private void openHelpDialog() {
+    LayoutInflater li = LayoutInflater.from(this);
+    View view = li.inflate(R.layout.aboutview, null); 
+    new AlertDialog.Builder(NewGameActivity.this)
+    .setTitle("Target Help")
+    .setIcon(R.drawable.about)
+    .setView(view)
+    .setNeutralButton("Changes", new DialogInterface.OnClickListener() {
+      public void onClick(DialogInterface dialog, int whichButton) {
+          openChangesDialog();
+      }
+    })
+    .setNegativeButton("Close", new DialogInterface.OnClickListener() {
+      public void onClick(DialogInterface dialog, int whichButton) {
+          //
+      }
+    })
+    .show();  
+    // TextView versionLabel = (TextView)findViewById(R.id.aboutVersionCode);
+    // versionLabel.setText(getVersionName());
+  }
+  private void openChangesDialog() {
+    LayoutInflater li = LayoutInflater.from(this);
+    View view = li.inflate(R.layout.changeview, null); 
+    new AlertDialog.Builder(NewGameActivity.this)
+    .setTitle("Changelog")
+    .setIcon(R.drawable.about)
+    .setView(view)
+    .setNegativeButton("Close", new DialogInterface.OnClickListener() {
+      public void onClick(DialogInterface dialog, int whichButton) {
+          //
+      }
+    })
+    .show();  
   }
 }
