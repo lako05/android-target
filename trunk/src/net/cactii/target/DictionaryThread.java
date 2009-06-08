@@ -36,6 +36,7 @@ public class DictionaryThread implements Runnable {
   public NineLetterWord currentNineLetter;
 
   public static DictionaryThread currentInstance = null;
+  public Handler messageHandler;
 
   private static void setCurrent(DictionaryThread current){
     DictionaryThread.currentInstance = current;
@@ -54,70 +55,71 @@ public class DictionaryThread implements Runnable {
     Message message = Message.obtain();
     message.what = MESSAGE_DICTIONARY_READY;
     MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);
-    Looper.loop();
-  }
 
-  public Handler messageHandler = new Handler() {
-    public void handleMessage(Message msg) {
-      switch(msg.what) {
-        case MESSAGE_GET_SMH_NINELETTER : {
-          SmhImport smhThread = new SmhImport();
-//        smhThread.currentPuzzleDate = "2009/05/23";
-          new Thread(smhThread).start();
-          break;
-        }
-        case MESSAGE_HAVE_SMH_NINELETTER : {
-          String word = (String)msg.obj;
-	      Message message = Message.obtain();
-          if (word == null || word.length() != 9) {
-        	message.what = MESSAGE_FAIL_SMH_NINELETTER;
-          } else {
-	        currentNineLetter = new NineLetterWord((String) msg.obj);
-	        currentNineLetter.setShuffledWord((String) msg.obj);
-            findNineLetterWord();
+    // Handler must be created in the thread (ie inside the run() method)
+    messageHandler = new Handler() {
+      public void handleMessage(Message msg) {
+        switch(msg.what) {
+          case MESSAGE_GET_SMH_NINELETTER : {
+            SmhImport smhThread = new SmhImport();
+  //        smhThread.currentPuzzleDate = "2009/05/23";
+            new Thread(smhThread).start();
+            break;
+          }
+          case MESSAGE_HAVE_SMH_NINELETTER : {
+            String word = (String)msg.obj;
+  	      Message message = Message.obtain();
+            if (word == null || word.length() != 9) {
+          	message.what = MESSAGE_FAIL_SMH_NINELETTER;
+            } else {
+  	        currentNineLetter = new NineLetterWord((String) msg.obj);
+  	        currentNineLetter.setShuffledWord((String) msg.obj);
+              findNineLetterWord();
+              // Send message back saying we have the word
+              message.what = MESSAGE_HAVE_NINELETTER;
+              message.obj = currentNineLetter.shuffled;
+            }
+            MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);
+            break;
+          }
+          case MESSAGE_GET_NINELETTER : {
+            
+            int minSize = msg.arg1;
+            int maxSize = msg.arg2;
+            do {
+              currentNineLetter = nineLetterWords.get((int) (Math.random() * nineLetterWords.size()));
+            } while (NineLetterWord.shuffleWithRange(currentNineLetter, minSize, maxSize) == false);
             // Send message back saying we have the word
+            Message message = Message.obtain();
             message.what = MESSAGE_HAVE_NINELETTER;
             message.obj = currentNineLetter.shuffled;
+            MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);
+            break;
           }
-          MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);
-          break;
-        }
-        case MESSAGE_GET_NINELETTER : {
-          
-          int minSize = msg.arg1;
-          int maxSize = msg.arg2;
-          do {
-            currentNineLetter = nineLetterWords.get((int) (Math.random() * nineLetterWords.size()));
-          } while (NineLetterWord.shuffleWithRange(currentNineLetter, minSize, maxSize) == false);
-          // Send message back saying we have the word
-          Message message = Message.obtain();
-          message.what = MESSAGE_HAVE_NINELETTER;
-          message.obj = currentNineLetter.shuffled;
-          MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);
-          break;
-        }
-        case MESSAGE_GET_MATCHING_WORDS : {
-          // Find words matching current nine letter (shuffled)
-          validWords = new ArrayList<String>();
-          getMatchingWords(R.raw.words_common);
-          getMatchingWords(currentDictionary);
-          
-          // Send notification back to main thread
-          Message message = Message.obtain();
-          message.what = MESSAGE_HAVE_MATCHING_WORDS;
-          MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);
-          break;
-        }
-        case MESSAGE_REREAD_DICTIONARY : {
-          // Dictionary selection has changed, reload
-          getDictionary();
-          nineLetterWords.clear();
-          getNineLetterWords(R.raw.nineletterwords_common); 
-          getNineLetterWords(nineLetterDictionary);
+          case MESSAGE_GET_MATCHING_WORDS : {
+            // Find words matching current nine letter (shuffled)
+            validWords = new ArrayList<String>();
+            getMatchingWords(R.raw.words_common);
+            getMatchingWords(currentDictionary);
+            
+            // Send notification back to main thread
+            Message message = Message.obtain();
+            message.what = MESSAGE_HAVE_MATCHING_WORDS;
+            MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);
+            break;
+          }
+          case MESSAGE_REREAD_DICTIONARY : {
+            // Dictionary selection has changed, reload
+            getDictionary();
+            nineLetterWords.clear();
+            getNineLetterWords(R.raw.nineletterwords_common); 
+            getNineLetterWords(nineLetterDictionary);
+          }
         }
       }
-    }
-  };
+    };
+  Looper.loop();
+  }
 
   // Fetch all nine letter words from the dictionary, populates this.nineLetterWords.
   private void getNineLetterWords(int dictionary) {

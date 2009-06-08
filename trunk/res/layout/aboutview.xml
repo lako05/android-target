@@ -33,7 +33,7 @@ no foreign words, no words with initial capital, no hyphenated words."
 				android:paddingLeft="15px"
 				android:textStyle="bold"
 				android:textColor="#ffffff" />
-			<TextView android:text="Touch the letters in the grid to make a word, then click 'Submit' to save that word.\n\nTap 'Clear' to delete letters from the current word, or long-click to clear the entire word.\n\nTo delete a word or see its definition, select the word in the list.\n\nWhen done, select 'Score' from the menu to see how you did, alternatively enable 'Realtime scoring' in options.\n\nAny current game will be saved whenever you leave the application."
+			<TextView android:text="Touch the letters in the grid to make a word, then click 'Submit' to save that word.\n\nTap 'Clear' to delete letters from the current word, or long-click to clear the entire word.\n\nTo search a word's definition, select the word in the list.\n\nWhen done, select 'Score' from the menu to see how you did, alternatively enable 'Realtime scoring' in options.\n\nAny current game will be saved whenever you leave the application."
 				android:layout_width="fill_parent" 
 				android:layout_height="wrap_content"
 				android:textColorLink="#ffffff"
