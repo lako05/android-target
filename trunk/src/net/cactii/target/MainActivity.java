@@ -367,7 +367,7 @@ public class MainActivity extends Activity {
     } else if (id == DIALOG_DOWNLOADING) {
       progressDialog = new ProgressDialog(this);
       progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-      progressDialog.setTitle("Downloading puzzle..");
+      progressDialog.setTitle("Downloading puzzle");
       progressDialog.setMessage("Please wait...");
       progressDialog.setIndeterminate(true);
       progressDialog.setProgress(0);
@@ -532,16 +532,7 @@ public class MainActivity extends Activity {
     this.targetGrid.setVisibility(View.INVISIBLE);
     this.countDown.enabled = extras.getBoolean("timed");
     new File(MainActivity.saveFilename).delete();
-    new Thread(new Runnable() {
-      @Override
-      public void run() {
-        // Sleep a fraction, allows main UI to catch up
-        try {
-          Thread.sleep(300);
-        } catch (InterruptedException e) { }
-        DictionaryThread.currentInstance.messageHandler.sendMessage(msg);
-      }
-    }).start();
+    DictionaryThread.currentInstance.messageHandler.sendMessage(msg);
   }
 
   private boolean playerHasWord(String word) {
