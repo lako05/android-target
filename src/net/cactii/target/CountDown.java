@@ -20,7 +20,7 @@ public class CountDown {
   
   // The MainActivity that this class is part of
   public MainActivity main;
-  // Thread which 'pings' us every 0.5 sec
+  // Thread which 'pings' us every 0.1 sec
   private Thread timerThread;
   // View which is the visible progress bar
   private ProgressBar progressBar;
