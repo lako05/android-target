@@ -331,8 +331,15 @@ public class MainActivity extends Activity {
 
   public void onPause() {
     this.savedGame.Save();
-    this.countDown.end();
+    this.countDown.pause();
+    Log.d("Target", "Paused game");
     super.onPause();
+  }
+  
+  public void onResume() {
+    this.countDown.resume();
+    Log.d("Target", "Resumed game");
+    super.onResume();
   }
     
   @Override
@@ -474,10 +481,10 @@ public class MainActivity extends Activity {
   
   protected void onActivityResult(int requestCode, int resultCode,
       Intent data) {
-    Log.d("Target", "Got newgame result: request " + requestCode + " result "
-        + resultCode);
     if (requestCode != ACTIVITY_NEWGAME || resultCode != Activity.RESULT_OK)
       return;
+    Log.d("Target", "Got newgame result: request " + requestCode + " result "
+        + resultCode);
     final Message msg = Message.obtain();
     Bundle extras = data.getExtras();
     if (extras.getBoolean("fromsmh")) {

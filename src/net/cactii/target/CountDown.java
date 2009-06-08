@@ -2,8 +2,6 @@ package net.cactii.target;
 
 import java.util.Date;
 
-import net.cactii.target.TargetGridView.LetterTouchedHandler;
-
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
@@ -88,10 +86,18 @@ public class CountDown {
       timerThread.interrupt();
   }
   
+  public void pause() {
+    this.active = false;
+  }
+  
+  public void resume() {
+    this.active = true;
+  }
+  
   // Extend the time by 6*wordLen
   // Called after successfully submitting a word.
   public int addWord(int wordLen) {
-    if (!this.enabled) return 0;
+    if (!this.enabled || !this.active) return 0;
     int timeAdded = wordLen * 50;
     this.remainingTime += timeAdded;
     if (this.remainingTime > this.initialTime)
@@ -159,7 +165,7 @@ public class CountDown {
           updateProgressBar();
         }
         updateTimeRemainingLabel();
-      } else {
+      } else if (!CountDown.this.enabled) {
         remainingTime = initialTime = 0;
       }
     }
