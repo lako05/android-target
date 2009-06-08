@@ -7,6 +7,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,6 +18,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Gravity;
@@ -104,6 +106,8 @@ public class MainActivity extends Activity {
   public SharedPreferences preferences;
   public SharedPreferences.Editor prefeditor = null;
   
+  private PowerManager.WakeLock wakeLock;
+  
   // Saved game
   public SavedGame savedGame = null;
   
@@ -117,6 +121,7 @@ public class MainActivity extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    
     // For now, a specific layout (fullscreen portrait)
     this.requestWindowFeature(Window.FEATURE_NO_TITLE);
     this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -146,9 +151,12 @@ public class MainActivity extends Activity {
         scoreAllWords();
       }
     });
-   
+    
     this.preferences = PreferenceManager.getDefaultSharedPreferences(this);
     this.prefeditor = preferences.edit();
+    
+    PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+    this.wakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "Target");
     
     newVersionCheck();
     this.savedGame = new SavedGame(this);
@@ -332,12 +340,17 @@ public class MainActivity extends Activity {
   public void onPause() {
     this.savedGame.Save();
     this.countDown.pause();
+    this.wakeLock.release();
     Log.d("Target", "Paused game");
     super.onPause();
   }
   
   public void onResume() {
     this.countDown.resume();
+    if (this.preferences.getBoolean("wakelock", true)) {
+      Log.d("Target", "Getting wake lock.");
+      this.wakeLock.acquire();
+    }
     Log.d("Target", "Resumed game");
     super.onResume();
   }

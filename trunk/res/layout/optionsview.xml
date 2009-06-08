@@ -11,6 +11,10 @@
 			android:entryValues="@array/dictionaryvalues"  
 			android:dialogTitle="Select Dictionary"
 			android:defaultValue="0" />
+		<CheckBoxPreference
+			android:key="wakelock"
+			android:title="Keep screen on"
+			android:defaultValue="true" />
 	</PreferenceCategory>
 
 </PreferenceScreen>  
