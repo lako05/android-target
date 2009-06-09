@@ -145,7 +145,7 @@ public class CountDown {
       green = 255 * ((float)progress/500);
       red = 255;
     }
-    alpha = (255 * ((float)(1000-progress) / 1000))/4;
+    alpha = (255 * ((float)(1000-progress) / 1000))/3;
     int color = ((int)alpha << 24) + ((int)red << 16) + ((int)green << 8) ;
     this.progressBar.setBackgroundColor(color);
   }
