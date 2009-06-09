@@ -198,7 +198,7 @@ public class MainActivity extends Activity {
     });
 
     this.playerWordList.setOnItemClickListener(new OnItemClickListener() {
-    	public void onItemClick(AdapterView adapterView, View view, int position, long id) {
+    	public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
     	  PlayerWord word = MainActivity.this.playerWords.get(position);
     	  MainActivity.this.currentSelectedWord = word;
     		String[] choices = new String[1];
@@ -275,6 +275,11 @@ public class MainActivity extends Activity {
       case DictionaryThread.MESSAGE_FAIL_SMH_NINELETTER :
         MainActivity.this.dismissDialog(MainActivity.DIALOG_FETCHING);
         Toast.makeText(MainActivity.this, "Error fetching smh.com.au puzzle!",
+                       Toast.LENGTH_LONG).show();
+        break;
+      case DictionaryThread.MESSAGE_FAIL_SMH_NINELETTER_NOTFOUND :
+        MainActivity.this.dismissDialog(MainActivity.DIALOG_FETCHING);
+        Toast.makeText(MainActivity.this, "smh.com.au puzzle 9-letter word not found! My dictionary isnt perfect, sorry :(",
                        Toast.LENGTH_LONG).show();
         break;
       }
@@ -387,7 +392,7 @@ public class MainActivity extends Activity {
 
   // Updates the 'Good/Very Good/Excellent' display.
   public void showWordCounts(int playerWords) {
-    int numWords = DictionaryThread.currentInstance.validWords.size();
+    int numWords = DictionaryThread.currentInstance.validWords.size() + 1;
     int good = numWords/2;
     int vgood = numWords*3/4;
     int excellent = numWords;
@@ -649,15 +654,13 @@ public class MainActivity extends Activity {
     .show();  
   }
   
+  // TODO: De-duplicate these methods
   public void newVersionCheck() {
     int pref_version = preferences.getInt("currentversion", -1);
     int current_version = getVersionNumber();
     if (pref_version == -1 || pref_version != current_version) {
-      this.prefeditor.putInt("currentversion", current_version);
-      this.prefeditor.commit();
       new File(MainActivity.saveFilename).delete();
       Log.d("Target", "Version number bumped from " + pref_version + " to " + current_version);
-      this.openChangesDialog();
       return;
     }
   }

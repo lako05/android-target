@@ -1,12 +1,18 @@
 package net.cactii.target;
 
+import java.io.File;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageInfo;
 import android.os.Bundle;
+import android.os.Message;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -104,6 +110,10 @@ public class NewGameActivity extends Activity {
         newGameTimed.setChecked(!newGameTimed.isChecked());
       }
     });
+    Message message = Message.obtain();
+    message.what = DictionaryThread.MESSAGE_REREAD_DICTIONARY;
+    DictionaryThread.currentInstance.messageHandler.sendMessage(message);
+    newVersionCheck();
   }
   
   public void onResume() {
@@ -170,5 +180,42 @@ public class NewGameActivity extends Activity {
       break;
     }
     return supRetVal;
+  }
+  
+  
+  public void newVersionCheck() {
+ 
+    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+    SharedPreferences.Editor prefeditor = preferences.edit();
+    
+    int pref_version = preferences.getInt("currentversion", -1);
+    int current_version = getVersionNumber();
+    if (pref_version == -1 || pref_version != current_version) {
+      prefeditor.putInt("currentversion", current_version);
+      prefeditor.commit();
+      this.openChangesDialog();
+      return;
+    }
+  }
+  
+  public int getVersionNumber() {
+    int version = -1;
+      try {
+          PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+          version = pi.versionCode;
+      } catch (Exception e) {
+          Log.e("Target", "Package name not found", e);
+      }
+      return version;
+  }
+  public String getVersionName() {
+    String version = "";
+      try {
+          PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+          version = pi.versionName;
+      } catch (Exception e) {
+          Log.e("Target", "Package name not found", e);
+      }
+      return version;
   }
 }

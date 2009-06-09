@@ -12,7 +12,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import android.util.Log;
-import android.view.View;
 
 public class SavedGame {
   

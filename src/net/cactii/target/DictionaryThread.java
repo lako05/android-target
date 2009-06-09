@@ -24,6 +24,7 @@ public class DictionaryThread implements Runnable {
   public static final int MESSAGE_GET_SMH_NINELETTER = 6;
   public static final int MESSAGE_HAVE_SMH_NINELETTER = 7;
   public static final int MESSAGE_FAIL_SMH_NINELETTER = 8;
+  public static final int MESSAGE_FAIL_SMH_NINELETTER_NOTFOUND = 9;
 
   private int nineLetterDictionary = 2;
   private int currentDictionary = 2;
@@ -46,11 +47,10 @@ public class DictionaryThread implements Runnable {
   public void run() {
     Looper.prepare();
     DictionaryThread.setCurrent(this);
-    getDictionary();
-
     nineLetterWords = new ArrayList<NineLetterWord>();
-    getNineLetterWords(R.raw.nineletterwords_common);	
-    getNineLetterWords(nineLetterDictionary);
+//    getDictionary();
+//    getNineLetterWords(R.raw.nineletterwords_common);	
+//    getNineLetterWords(nineLetterDictionary);
     
     Message message = Message.obtain();
     message.what = MESSAGE_DICTIONARY_READY;
@@ -68,16 +68,20 @@ public class DictionaryThread implements Runnable {
           }
           case MESSAGE_HAVE_SMH_NINELETTER : {
             String word = (String)msg.obj;
-  	      Message message = Message.obtain();
+            Message message = Message.obtain();
             if (word == null || word.length() != 9) {
           	message.what = MESSAGE_FAIL_SMH_NINELETTER;
             } else {
-  	        currentNineLetter = new NineLetterWord((String) msg.obj);
-  	        currentNineLetter.setShuffledWord((String) msg.obj);
-              findNineLetterWord();
-              // Send message back saying we have the word
-              message.what = MESSAGE_HAVE_NINELETTER;
-              message.obj = currentNineLetter.shuffled;
+    	        currentNineLetter = new NineLetterWord((String) msg.obj);
+    	        currentNineLetter.setShuffledWord((String) msg.obj);
+              Boolean foundWord = findNineLetterWord();
+              if (foundWord) {
+                // Send message back saying we have the word
+                message.what = MESSAGE_HAVE_NINELETTER;
+                message.obj = currentNineLetter.shuffled;
+              } else {
+                message.what = MESSAGE_FAIL_SMH_NINELETTER_NOTFOUND;
+              }
             }
             MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);
             break;
@@ -99,8 +103,9 @@ public class DictionaryThread implements Runnable {
           case MESSAGE_GET_MATCHING_WORDS : {
             // Find words matching current nine letter (shuffled)
             validWords = new ArrayList<String>();
-            getMatchingWords(R.raw.words_common);
-            getMatchingWords(currentDictionary);
+//            getMatchingWords(R.raw.words_common);
+//            getMatchingWords(currentDictionary);
+            getAllMatchingWords();
             
             // Send notification back to main thread
             Message message = Message.obtain();
@@ -139,16 +144,132 @@ public class DictionaryThread implements Runnable {
   }
 
   // From 'currentNineLetterWord', with an unknown word (ie only the
-  // scrambled word), attempt to find the word.
-  private void findNineLetterWord() {
+  // scrambled word), attempt to find the word. Returns boolean,
+  // whether or not a word was found.
+  private boolean findNineLetterWord() {
     validWords = new ArrayList<String>();
     getMatchingWords(nineLetterDictionary);
     if (validWords.size() > 0) {
       currentNineLetter.word = validWords.get(0);
     } else {
       getMatchingWords(R.raw.nineletterwords_common);
-      currentNineLetter.word = validWords.get(0);
+      if (validWords.size() > 0)
+        currentNineLetter.word = validWords.get(0);
+      else
+        return false;
     }
+    return true;
+  }
+  
+  // Dictionary is split into letters for faster searching
+  private void getAllMatchingWords() {
+    
+    // First initialise an array for letters we've already searched.
+    char[] searchedLetters = new char[9];
+    for (int i = 0 ; i < 9 ; i++)
+      searchedLetters[i] = '\0';
+    
+    // Now go thru nineletters letters and see if we've
+    // previously looked for those letters.
+    for (int i = 0 ; i < 9 ; i++) {
+      char letter = currentNineLetter.word.charAt(i);
+      boolean searchedLetterAlready = false;
+      for (int j = 0 ; j < 9 ; j++) {
+
+        if (searchedLetters[j] == letter) {
+          searchedLetterAlready = true;
+          break;
+        } else if (searchedLetters[j] == '\0') {
+          searchedLetters[j] = letter;
+          break;
+        }
+      }
+      if (searchedLetterAlready)
+        continue;
+      // New letter, find some words. Only split common words out,
+      // as that is the most time consuming.
+      switch(letter) {
+        case 'A':
+          getMatchingWords(R.raw.words_common_a);
+          break;
+        case 'B':
+          getMatchingWords(R.raw.words_common_b);
+          break;
+        case 'C':
+          getMatchingWords(R.raw.words_common_c);
+          break;
+        case 'D':
+          getMatchingWords(R.raw.words_common_d);
+          break;
+        case 'E':
+          getMatchingWords(R.raw.words_common_e);
+          break;
+        case 'F':
+          getMatchingWords(R.raw.words_common_f);
+          break;
+        case 'G':
+          getMatchingWords(R.raw.words_common_g);
+          break;
+        case 'H':
+          getMatchingWords(R.raw.words_common_h);
+          break;
+        case 'I':
+          getMatchingWords(R.raw.words_common_i);
+          break;
+        case 'J':
+          getMatchingWords(R.raw.words_common_j);
+          break;
+        case 'K':
+          getMatchingWords(R.raw.words_common_k);
+          break;
+        case 'L':
+          getMatchingWords(R.raw.words_common_l);
+          break;
+        case 'M':
+          getMatchingWords(R.raw.words_common_m);
+          break;
+        case 'N':
+          getMatchingWords(R.raw.words_common_n);
+          break;
+        case 'O':
+          getMatchingWords(R.raw.words_common_o);
+          break;
+        case 'P':
+          getMatchingWords(R.raw.words_common_p);
+          break;
+        case 'Q':
+          getMatchingWords(R.raw.words_common_q);
+          break;
+        case 'R':
+          getMatchingWords(R.raw.words_common_r);
+          break;
+        case 'S':
+          getMatchingWords(R.raw.words_common_s);
+          break;
+        case 'T':
+          getMatchingWords(R.raw.words_common_t);
+          break;
+        case 'U':
+          getMatchingWords(R.raw.words_common_u);
+          break;
+        case 'V':
+          getMatchingWords(R.raw.words_common_v);
+          break;
+        case 'W':
+          getMatchingWords(R.raw.words_common_w);
+          break;
+        case 'X':
+          getMatchingWords(R.raw.words_common_x);
+          break;
+        case 'Y':
+          getMatchingWords(R.raw.words_common_y);
+          break;
+        case 'Z':
+          getMatchingWords(R.raw.words_common_z);
+          break;
+      }
+    }
+    getMatchingWords(currentDictionary);
   }
 
   // Get all words matching currentNineLetter and magicLetter
