@@ -26,6 +26,7 @@ public class DictionaryThread implements Runnable {
   public static final int MESSAGE_HAVE_SMH_NINELETTER = 7;
   public static final int MESSAGE_FAIL_SMH_NINELETTER = 8;
   public static final int MESSAGE_FAIL_SMH_NINELETTER_NOTFOUND = 9;
+  public static final int MESSAGE_HAVE_DEFINITION = 10;
 
   private int nineLetterDictionary = 2;
   private int currentDictionary = 2;

@@ -23,13 +23,11 @@ public class NineLetterWord {
   // Constructor for just a word
   public NineLetterWord(String line) {
     this.word = line;
-    // this.word = line.substring(0, 9);
     this.magicLetter = this.word.substring(4, 5);
   }
   
   // Constructor for a pair of byte arrays
   public NineLetterWord(byte[] wordRecord, byte[] wordRecordCount) {
-    // this.word = new String(wordRecord);
     this.wordArray = wordRecord;
     this.wordCountsArray = wordRecordCount;
   }
