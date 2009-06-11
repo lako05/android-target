@@ -6,6 +6,7 @@ import android.util.Log;
 
 public class NineLetterWord {
   // The unscrambled word.
+  public byte[] wordArray;
   public String word;
   // The scrambled word, element 4 is the 'magic' word
   public String shuffled;
@@ -13,30 +14,32 @@ public class NineLetterWord {
   public char[] array;
   // Map of valid word counts for a given magic Letter.
   public HashMap<String, Integer> wordCounts;
+  public byte[] wordCountsArray;
   // The current magic letter.
   public String magicLetter;
   // Line from file
   public String wordFileLine;
   
-  // Constructor, takes a string "HABITABLE:31:67:51:33:59:67:51:59:59"
-  // or just a word
+  // Constructor for just a word
   public NineLetterWord(String line) {
-    if (line.contains(":")) {
-      this.wordFileLine = line;
-      this.word = line.substring(0, 9);
-    } else {
-      this.word = line;
-    }
-
+    this.word = line;
     // this.word = line.substring(0, 9);
     this.magicLetter = this.word.substring(4, 5);
   }
   
+  // Constructor for a pair of byte arrays
+  public NineLetterWord(byte[] wordRecord, byte[] wordRecordCount) {
+    // this.word = new String(wordRecord);
+    this.wordArray = wordRecord;
+    this.wordCountsArray = wordRecordCount;
+  }
+
   private void populateWordCounts() {
     this.wordCounts = new HashMap<String, Integer>();
-    String wordParts[] = this.wordFileLine.split(":");
-    for (int i = 1; i < 10 ; i++) {
-      this.wordCounts.put(this.word.substring(i-1, i), new Integer(wordParts[i]));
+    for (int i = 0 ; i < 9 ; i++) {
+      byte[] letter = new byte[1];
+      letter[0] = this.wordArray[i];
+      this.wordCounts.put(new String(letter), new Integer(this.wordCountsArray[i]));
     }
   }
   
@@ -44,6 +47,7 @@ public class NineLetterWord {
   // count between lower and upper.
   // Returns boolean, if ranges could be satisfied.
   public static boolean shuffleWithRange(NineLetterWord nlw, int lower, int upper) {
+    nlw.word = new String(nlw.wordArray);
     shuffle(nlw);
     Log.d("Target", "Shuffling word: " + nlw.word);
     nlw.populateWordCounts();
