@@ -1,6 +1,7 @@
 package net.cactii.target;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -90,8 +91,12 @@ public class DictionaryThread implements Runnable {
             
             int minSize = msg.arg1;
             int maxSize = msg.arg2;
+            int attempts = 0;
             do {
-              currentNineLetter = nineLetterWords.get((int) (Math.random() * nineLetterWords.size()));
+              int random = (int) (Math.random() * nineLetterWords.size());
+              currentNineLetter = nineLetterWords.get(random);
+              if (attempts++ > 100)
+                break;
             } while (NineLetterWord.shuffleWithRange(currentNineLetter, minSize, maxSize) == false);
             // Send message back saying we have the word
             Message message = Message.obtain();
@@ -103,8 +108,6 @@ public class DictionaryThread implements Runnable {
           case MESSAGE_GET_MATCHING_WORDS : {
             // Find words matching current nine letter (shuffled)
             validWords = new ArrayList<String>();
-//            getMatchingWords(R.raw.words_common);
-//            getMatchingWords(currentDictionary);
             getAllMatchingWords();
             
             // Send notification back to main thread
@@ -127,18 +130,25 @@ public class DictionaryThread implements Runnable {
   }
 
   // Fetch all nine letter words from the dictionary, populates this.nineLetterWords.
+  //
+  // The nineletter dictionary is a binary file. It consists of alternating nine-byte
+  // sequences. The first sequence is the 9 letter word (ascii), and the second
+  // sequence is an array of bytes, each byte representing the number of word
+  // matches with that letter as the 'magic' letter.
   private void getNineLetterWords(int dictionary) {
     InputStream is = MainActivity.currentInstance.getResources().openRawResource(dictionary);
-    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-    String word;
+    DataInputStream in = new DataInputStream(is);
+    byte[] wordRecord = new byte[9];
+    byte[] wordRecordCount = new byte[9];
     try {
-      while((word = rd.readLine())!=null) {
-        word = word.trim();
-        nineLetterWords.add(new NineLetterWord(word));
+      while (in.read(wordRecord) == 9) {
+        in.read(wordRecordCount);
+        nineLetterWords.add(new NineLetterWord(wordRecord, wordRecordCount));
+        wordRecord = new byte[9];
+        wordRecordCount = new byte[9];
       }
-      is.close();
     } catch (IOException e) {
-      //pass
+      // pass
     }
     Log.d("Target", "Read all 9 letter words.");
   }
@@ -147,18 +157,14 @@ public class DictionaryThread implements Runnable {
   // scrambled word), attempt to find the word. Returns boolean,
   // whether or not a word was found.
   private boolean findNineLetterWord() {
-    validWords = new ArrayList<String>();
-    getMatchingWords(nineLetterDictionary);
-    if (validWords.size() > 0) {
-      currentNineLetter.word = validWords.get(0);
-    } else {
-      getMatchingWords(R.raw.nineletterwords_common);
-      if (validWords.size() > 0)
-        currentNineLetter.word = validWords.get(0);
-      else
-        return false;
+    for (NineLetterWord word : this.nineLetterWords) {
+      word.word = new String(word.wordArray);
+      if (isValidWord(word.word)) {
+        currentNineLetter.word = word.word;
+        return true;
+      }
     }
-    return true;
+    return false;
   }
   
   // Dictionary is split into letters for faster searching
@@ -275,22 +281,30 @@ public class DictionaryThread implements Runnable {
   // Get all words matching currentNineLetter and magicLetter
   private void getMatchingWords(int dictionary) {
     InputStream is = MainActivity.currentInstance.getResources().openRawResource(dictionary);
-    BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+    BufferedReader rd = new BufferedReader(new InputStreamReader(is), 8192);
     String word;
     try {
+      /*
+      previousWord = rd.readLine();
+      previousWord = previousWord.trim();
+      if (isValidWord(previousWord))
+        validWords.add(previousWord);
+      
       while((word = rd.readLine())!=null) {
         word = word.trim();
-        // Nineletter words have ':' for word counts...we just want the first part
-        if (word.contains(":")) {
-          word = word.substring(0, 9);
-          if (isValidWord(word)) {
-            validWords.add(word);
-            break;
-          }
-        } else {
-          if (isValidWord(word))
-            validWords.add(word);
-        }
+        previousCount = Integer.parseInt(word.substring(0, 1));
+        newWord = previousWord.substring(0, previousCount) +
+                word.substring(1);
+        if (isValidWord(newWord))
+          validWords.add(newWord);
+        previousWord = newWord;
+      }
+      */
+
+      while((word = rd.readLine())!=null) {
+        word = word.trim();
+        if (isValidWord(word))
+          validWords.add(word);
       }
       is.close();
     } catch (IOException e) {
