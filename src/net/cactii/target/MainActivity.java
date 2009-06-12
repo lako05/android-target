@@ -81,9 +81,6 @@ public class MainActivity extends Activity {
   // Thread to handle the dictionary.
   public Thread dictionaryThread;
   
-  // Holds the word that we want to define
-  public String wordToDefine;
-  
   // Display of 'Good/Very Good/Excellent'
   private TextView targetCounts;
   
@@ -212,9 +209,9 @@ public class MainActivity extends Activity {
           @Override
           public void onClick(DialogInterface dialog, int which) {
             PlayerWord word = MainActivity.this.currentSelectedWord;
-            MainActivity.this.wordToDefine = word.word.toLowerCase();
             Intent myIntent = null;
             myIntent = new Intent(MainActivity.this, DefineActivity.class);
+            myIntent.putExtra("net.cactii.target.wordToDefine", word.word.toLowerCase());
             startActivity(myIntent);
           }
         })

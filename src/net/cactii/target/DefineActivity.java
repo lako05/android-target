@@ -27,6 +27,8 @@ public class DefineActivity extends Activity {
   // Thread handling definition lookups
   public Thread dictcThread;
   
+  public String wordToDefine;
+  
   public static DefineActivity currentInstance;
     
   private static void setCurrent(DefineActivity current){
@@ -49,12 +51,14 @@ public class DefineActivity extends Activity {
     this.defineView = (TextView)findViewById(R.id.defineText);
     this.scroller = (LinearLayout)findViewById(R.id.defineScroll);
     // Handles searching for definitions
-    DictClient dictc = new DictClient();
-    if (MainActivity.currentInstance == null ||
-        MainActivity.currentInstance.wordToDefine == null)
+    Bundle extras = getIntent().getExtras();
+    this.wordToDefine = extras.getString("net.cactii.target.wordToDefine");
+
+    if (this.wordToDefine == null)
       finish();
     else {
-      dictc.wordToDefine = MainActivity.currentInstance.wordToDefine;
+      DictClient dictc = new DictClient();
+      dictc.wordToDefine = this.wordToDefine;
       this.dictcThread = new Thread(dictc);
       this.dictcThread.start();
       this.headerView.setText("Definition search for: " + dictc.wordToDefine);
@@ -110,27 +114,14 @@ public class DefineActivity extends Activity {
 
         @Override
         public void onClick(View v) {
-          addGoogleSearch(MainActivity.currentInstance.wordToDefine.toLowerCase());
-          scroller.removeView(gb);
-          /*
           Intent myIntent = null;
-          myIntent = new Intent("android.intent.action.VIEW", Uri.parse("http://www.google.com/" +
-              "search?q=define:" + MainActivity.currentInstance.wordToDefine.toLowerCase()));
-          // Start the activity
-          startActivity(myIntent); 
-          */
+          myIntent = new Intent(DefineActivity.this, GoogleDefineActivity.class);
+          myIntent.putExtra("net.cactii.target.wordToDefine", wordToDefine.toLowerCase());
+          startActivity(myIntent);
         }
         
       });
       scroller.addView(gb);
     }
   };
-  
-  public void addGoogleSearch(String word) {
-    WebView wv = new WebView(DefineActivity.this);
-    wv.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT,
-                                        LayoutParams.WRAP_CONTENT));
-    wv.loadUrl("http://www.google.com/search?q=define:" + word);
-    scroller.addView(wv);
-  }
 }
