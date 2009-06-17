@@ -72,7 +72,7 @@ public class DictionaryThread implements Runnable {
             String word = (String)msg.obj;
             Message message = Message.obtain();
             if (word == null || word.length() != 9) {
-          	message.what = MESSAGE_FAIL_SMH_NINELETTER;
+              message.what = MESSAGE_FAIL_SMH_NINELETTER;
             } else {
     	        currentNineLetter = new NineLetterWord((String) msg.obj);
     	        currentNineLetter.setShuffledWord((String) msg.obj);
@@ -82,7 +82,10 @@ public class DictionaryThread implements Runnable {
                 message.what = MESSAGE_HAVE_NINELETTER;
                 message.obj = currentNineLetter.shuffled;
               } else {
-                message.what = MESSAGE_FAIL_SMH_NINELETTER_NOTFOUND;
+                // message.what = MESSAGE_FAIL_SMH_NINELETTER_NOTFOUND;
+                message.what = MESSAGE_HAVE_NINELETTER;
+                currentNineLetter.word = currentNineLetter.shuffled;
+                message.obj = currentNineLetter.shuffled;
               }
             }
             MainActivity.currentInstance.newWordReadyHandler.sendMessage(message);

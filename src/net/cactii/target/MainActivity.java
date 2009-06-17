@@ -2,6 +2,7 @@ package net.cactii.target;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -57,8 +58,6 @@ public class MainActivity extends Activity {
   public static final int DOWNLOAD_COMPLETE = 2;
   public static final int COUNTDOWN_PING = 3;
   
-  // Top area of the game
-  public LinearLayout playArea;
   // The main grid object.
   public TargetGridView targetGrid;
   
@@ -74,15 +73,17 @@ public class MainActivity extends Activity {
   public ProgressBar countDownBar;
   public CountDown countDown;
   public TextView timeRemaining;
+  private Button helpButton;
+  
+  // Player word count display
+  private TextView playerWordCountLabel;
+  private TextView playerWordCountText;
   
   // 'Submit' button.
   private Button submitWord;
   
   // Thread to handle the dictionary.
   public Thread dictionaryThread;
-  
-  // Display of 'Good/Very Good/Excellent'
-  private TextView targetCounts;
   
   // Points to the active instance of the main activity.
   public static MainActivity currentInstance = null;
@@ -95,7 +96,7 @@ public class MainActivity extends Activity {
   
   // List view of the players current words.
   public ListView playerWordList;
-  
+
   // Adapter to link playerWordList to playerWords
   public WordAdapter playerWordsAdapter = null;
   
@@ -130,14 +131,15 @@ public class MainActivity extends Activity {
     
     MainActivity.setCurrent(this);
     setContentView(R.layout.main);
-    this.playArea = (LinearLayout)findViewById(R.id.playArea);
     this.targetGrid = (TargetGridView)findViewById(R.id.targetGrid);
     this.enteredWordBox = (TextView)findViewById(R.id.enteredWord);
     this.clearWord = (Button)findViewById(R.id.clearWord);
     this.submitWord = (Button)findViewById(R.id.submitWord);
-    this.targetCounts = (TextView)findViewById(R.id.targetCounts);
     this.playerWordList = (ListView)findViewById(R.id.playerWordList);
     
+    this.playerWordCountLabel = (TextView)findViewById(R.id.targetCountPlayerLabel);
+    this.playerWordCountText = (TextView)findViewById(R.id.targetCountPlayer);
+
     // Configure the countdown timer
     this.countDownBar = (ProgressBar)findViewById(R.id.gameTimer);
     this.timeRemaining = (TextView)findViewById(R.id.timeRemaining);
@@ -178,6 +180,13 @@ public class MainActivity extends Activity {
       public void onClick(View v) {
         targetGrid.clearLastLetter();
         enteredWordBox.setText(targetGrid.getSelectedWord());
+      }
+    });
+    
+    this.helpButton = (Button)findViewById(R.id.helpButton);
+    this.helpButton.setOnClickListener(new OnClickListener() {
+      public void onClick(View v) {
+        openHelpDialog();
       }
     });
 
@@ -240,7 +249,6 @@ public class MainActivity extends Activity {
         // Dictionary thread sends message that a new 9letter is available.
         String nineLetterWord = (String)msg.obj;
         targetGrid.setLetters(nineLetterWord);
-        playArea.setVisibility(View.VISIBLE);
         setGameState(true);
 
         // This must be posted here. If called in the get_nine_letter handler,
@@ -259,9 +267,7 @@ public class MainActivity extends Activity {
         break;
       case DictionaryThread.MESSAGE_DICTIONARY_READY :
         // Called after game is restored when dictionary is ready.
-        ((TextView)findViewById(R.id.starting)).setVisibility(View.GONE);
         if (MainActivity.this.savedGame.Restore()) {
-          playArea.setVisibility(View.VISIBLE);
           MainActivity.this.animateTargetGrid();
         } else {
           Intent i = new Intent(MainActivity.this, NewGameActivity.class);
@@ -316,11 +322,13 @@ public class MainActivity extends Activity {
       return;
     }
     PlayerWord playerWord = new PlayerWord(word);
+    playerWord.willAnimate = true;
     this.playerWords.add(playerWord);
+    Collections.sort(this.playerWords);
     targetGrid.clearGrid();
     this.scoreWord(playerWord);
     this.showWordCounts(this.countCorrectWords());
-    this.playerWordList.setSelectionFromTop(this.playerWords.size()-1, 10);
+    this.playerWordList.setSelectionFromTop(this.playerWords.indexOf(playerWord), 10);
     if (playerWord.result == PlayerWord.RESULT_OK)
       addedSeconds = this.countDown.addWord(playerWord.word.length());
 
@@ -353,6 +361,11 @@ public class MainActivity extends Activity {
       Log.d("Target", "Getting wake lock.");
       this.wakeLock.acquire();
     }
+    boolean sounds = preferences.getBoolean("sounds", true);
+    this.clearWord.setSoundEffectsEnabled(sounds);
+    this.submitWord.setSoundEffectsEnabled(sounds);
+    this.playerWordList.setSoundEffectsEnabled(sounds);
+    this.helpButton.setSoundEffectsEnabled(sounds);
     Log.d("Target", "Resumed game");
     super.onResume();
   }
@@ -393,10 +406,16 @@ public class MainActivity extends Activity {
     int good = numWords/2;
     int vgood = numWords*3/4;
     int excellent = numWords;
-    String targets = "Good:          " + good +
-    "\nVery good:  " + vgood +
-    "\nExcellent:    " + excellent +
-    "\n\nYou:             " + playerWords;
+    TextView countGood = (TextView)findViewById(R.id.targetCountGood);
+    TextView countVeryGood = (TextView)findViewById(R.id.targetCountVeryGood);
+    TextView countExcellent = (TextView)findViewById(R.id.targetCountExcellent);
+
+    countGood.setText(good + " words");
+    countVeryGood.setText(vgood + " words");
+    countExcellent.setText(excellent + " words");
+
+    playerWordCountText.setText(playerWords + " words");
+    
     if (numWords > 0 && this.targetGrid.gameActive == false) {
       if (playerWords >= excellent)
         showWordMessage("EXCELLENT!");
@@ -405,7 +424,6 @@ public class MainActivity extends Activity {
       else if (playerWords >= good)
         showWordMessage("GOOD!");
     }
-    this.targetCounts.setText(targets);
   }
   
   public void showWordMessage(String message) {
@@ -525,12 +543,10 @@ public class MainActivity extends Activity {
     showDialog(msg.what == DictionaryThread.MESSAGE_GET_SMH_NINELETTER ? 
         MainActivity.DIALOG_DOWNLOADING : MainActivity.DIALOG_FETCHING);
 
-    this.playArea.setVisibility(View.VISIBLE);
     this.InitPlayerWords();
     this.playerWordsAdapter.notifyDataSetChanged();
     this.showWordMessage("");
     this.timeRemaining.setText("");
-    this.targetCounts.setText("");
     this.targetGrid.setVisibility(View.INVISIBLE);
     this.countDown.enabled = extras.getBoolean("timed");
     new File(MainActivity.saveFilename).delete();

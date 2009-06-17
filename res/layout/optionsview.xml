@@ -15,6 +15,11 @@
 			android:key="wakelock"
 			android:title="Keep screen on"
 			android:defaultValue="true" />
+		<CheckBoxPreference
+			android:key="sounds"
+			android:title="Sound"
+			android:summary="Enable sound in main game"
+			android:defaultValue="true" />
 	</PreferenceCategory>
 
 </PreferenceScreen>  

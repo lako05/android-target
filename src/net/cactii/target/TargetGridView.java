@@ -24,7 +24,7 @@ public class TargetGridView extends View implements OnTouchListener {
   // Initialise some colours
   private static final int backgroundColor = 0x00FFFFFF;
   private static final int gridColor = Color.BLACK;
-  private static final int centerBackgroundColor = Color.BLACK;
+  private static final int centerBackgroundColor = 0x80000000;
   private static final int centerLetterColor = Color.WHITE;
   private static final int letterColor = Color.BLACK;
   private static final int letterHighlightColor = 0x90FFFF00;
@@ -45,6 +45,7 @@ public class TargetGridView extends View implements OnTouchListener {
       false, false, false, false, false,
       false, false, false, false};
 
+  // Array of grid indices of selected letters
   private int[] selectedword = new int[] {-1, -1, -1, -1, -1, -1, -1, -1, -1};
 
   // Variable to indicate the letters on the grid.
@@ -238,30 +239,47 @@ public class TargetGridView extends View implements OnTouchListener {
   //
   // Finally calls the LetterTouchedHandler for further actions.
   public boolean onTouch(View v, MotionEvent event) {
-    boolean handled = false;
-    int index = 0;
     if (this.gameActive == false)
-      return true;
+      return false;
     switch(event.getAction()) {
-    case MotionEvent.ACTION_DOWN : {
-      index = eventToLetterIndex(event);
-      if (this.highlights[index])
-        return true; // return if letter already highlighted
-      this.highlights[index] = true;
-      handled = true;
-      invalidate();
-      for (int i = 0 ; i < 9 ; i++) {
-        if (this.selectedword[i] == -1) {
-          this.selectedword[i] = index;
-          break;
+      case MotionEvent.ACTION_DOWN : {
+        int gridIndex = eventToLetterIndex(event);
+        if (this.highlights[gridIndex]) {
+          unSelectIfLastLetter(gridIndex);
+          return true; // return if letter already highlighted
         }
+        this.highlights[gridIndex] = true;
+        invalidate();
+        for (int i = 0 ; i < 9 ; i++) {
+          if (this.selectedword[i] == -1) {
+            this.selectedword[i] = gridIndex;
+            break;
+          }
+        }
+        if (this._letterTouchedHandler != null)
+          this._letterTouchedHandler.handleLetterTouched(gridIndex);
+        return true;
       }
-      // Log.d("Target", "Selectedword: " + selectedword);
-      if (this._letterTouchedHandler != null)
-        this._letterTouchedHandler.handleLetterTouched(index);
     }
+    return false;
+  }
+  
+  private void unSelectIfLastLetter(int gridIndex) {
+    int lastIndex = -2;
+    int i;
+    for (i = 0 ; i < 9 ; i++) {
+      if (this.selectedword[i] == -1) {
+        lastIndex = i-1;
+        break;
+      }
     }
-    return handled;
+    if (lastIndex == -2 && i == 9)
+      lastIndex = 8;
+
+    if (this.selectedword[lastIndex] == gridIndex) {
+      clearLastLetter();
+      this._letterTouchedHandler.handleLetterTouched(gridIndex);
+    }
   }
 
   // Takes an onTouch event and returns the grid index of the touched letter.
