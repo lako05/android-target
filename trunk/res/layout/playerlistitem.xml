@@ -3,11 +3,11 @@
 		android:id="@+id/wordRow"
 		android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:background="#00FFFFD0"
+        android:background="#20000000"
         android:layout_height="fill_parent">
   <TextView
     android:id="@+id/playerListItem"
-    android:layout_width="fill_parent"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:textSize="15dp"
     android:textColor="#FF000000"
@@ -16,14 +16,5 @@
 	android:text="word"
 	android:bufferType="spannable"
     />
-  <TextView
-    android:id="@+id/playerListItemResult"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:textSize="15dp"
-    android:layout_gravity="right"
-    android:layout_weight="0.4"
-    android:text=""
-    android:textColor="#FF000000"
-    />
+
 </LinearLayout>

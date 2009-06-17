@@ -6,9 +6,12 @@ import android.app.Activity;
 import android.graphics.Typeface;
 import android.text.Spannable;
 import android.text.style.StrikethroughSpan;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.BaseAdapter;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -55,17 +58,20 @@ public class WordAdapter extends BaseAdapter {
     returnView = inflater.inflate(R.layout.playerlistitem, null);
     PlayerWord playerWord = this.playerWords.get(position);
     TextView playerWordItem = (TextView)returnView.findViewById(R.id.playerListItem);
-    TextView playerWordItemResult = (TextView)returnView.findViewById(R.id.playerListItemResult);
     LinearLayout wordRow = (LinearLayout)returnView.findViewById(R.id.wordRow);
     playerWordItem.setTypeface(this.face);
     playerWordItem.setText(playerWord.word);
+    if (playerWord.willAnimate) {
+      playerWordItem.setBackgroundColor(0x40FFFF00);
+      Animation animation = AnimationUtils.loadAnimation(MainActivity.currentInstance, R.anim.slidefromright);
+      playerWordItem.startAnimation(animation);
+      playerWord.willAnimate = false;
+    }
     switch(playerWord.result) {
       case PlayerWord.RESULT_INVALID :
-        playerWordItemResult.setText("INVALID");
         Spannable text = (Spannable) playerWordItem.getText();
         text.setSpan(new StrikethroughSpan(), 0, text.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         playerWordItem.setTextColor(0xFFFF0000);
-        playerWordItemResult.setTextColor(0xFFFF0000);
         // wordRow.setBackgroundColor(0x90FFB0B0);
         break;
       case PlayerWord.RESULT_MISSED :
@@ -76,11 +82,12 @@ public class WordAdapter extends BaseAdapter {
         break;
       case PlayerWord.RESULT_HEADER :
         wordRow.setBackgroundColor(0x8FFFFFFF);
-        playerWordItem.setText("");
-        playerWordItemResult.setText(playerWord.word);
+        playerWordItem.setText(playerWord.word);
+        playerWordItem.setTypeface(Typeface.DEFAULT);
+        playerWordItem.setGravity(Gravity.CENTER_HORIZONTAL);
         break;
       default :
-        playerWordItemResult.setText("");
+        playerWordItem.setText("");
       break;
     }
     return returnView;
