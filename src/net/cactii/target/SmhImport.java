@@ -9,6 +9,7 @@ package net.cactii.target;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import org.apache.http.HttpEntity;
@@ -83,20 +84,23 @@ public class SmhImport implements Runnable {
       if (status.getStatusCode() == 200) {
         HttpEntity entity = response.getEntity();
         InputStream instream = entity.getContent();
+        InputStreamReader is = new InputStreamReader(instream);
         // downloadSize = (int)entity.getContentLength();
         downloadSize = 40000; // Dummy for now, SMH no give content-length
         msg = Message.obtain();
         msg.what = MainActivity.DOWNLOAD_STARTING;
         msg.arg1 = downloadSize;
         MainActivity.currentInstance.progressHandler.sendMessage(msg);
-        byte buf[] = new byte[8192];
-        while((len = instream.read(buf)) > 0) {
+        char buf[] = new char[8192];
+        while((len = is.read(buf) ) > 0) {
           totalRead += len;
           msg = Message.obtain();
           msg.what = MainActivity.DOWNLOAD_PROGRESS;
           msg.arg1 = 100 * totalRead / downloadSize;
           MainActivity.currentInstance.progressHandler.sendMessage(msg);
-          pageContent = pageContent.concat(new String(buf));
+          pageContent += new String(buf).trim();
+          for (int i = 0 ; i < 8192 ; i++)
+            buf[i] = '\0';
         }
       }
     } catch (ClientProtocolException e) {
@@ -107,6 +111,7 @@ public class SmhImport implements Runnable {
     msg = Message.obtain();
     msg.what = MainActivity.DOWNLOAD_COMPLETE;
     MainActivity.currentInstance.progressHandler.sendMessage(msg);
+
     return pageContent;
   }
 }

@@ -264,6 +264,9 @@ public class MainActivity extends Activity {
         MainActivity.this.dismissDialog(MainActivity.DIALOG_FETCHING);
         MainActivity.this.animateTargetGrid();
         MainActivity.this.countDown.begin(0, 0);
+        Toast.makeText(MainActivity.this,
+            "Remember - no 's' plurals, no proper nouns, no hyphenated or foreign words.",
+            Toast.LENGTH_LONG).show();
         break;
       case DictionaryThread.MESSAGE_DICTIONARY_READY :
         // Called after game is restored when dictionary is ready.
