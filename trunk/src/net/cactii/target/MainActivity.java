@@ -498,8 +498,12 @@ public class MainActivity extends Activity {
     }
     case MENU_SCORE : {
       if (targetGrid.gameActive) {
-        this.setGameState(false);
-        this.scoreAllWords();
+        if (this.countDown.enabled)
+          this.countDown.remainingTime = 0;
+        else {
+          this.setGameState(false);
+          this.scoreAllWords();
+        }
       }
       break;
     }
