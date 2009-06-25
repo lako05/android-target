@@ -543,6 +543,7 @@ public class MainActivity extends Activity {
       case R.id.newWordCount75 :
         msg.arg1 = 75;
         msg.arg2 = 500;
+        break;
       default :
         return;
       }
@@ -611,12 +612,14 @@ public class MainActivity extends Activity {
   // Score the player's words.
   public void scoreAllWords() {
   	int correctUserWords;
+  	int missedHeaderIndex;
   	
   	this.countDown.end();
   	correctUserWords = countCorrectWords();
     PlayerWord header = new PlayerWord("MISSED WORDS");
     header.result = PlayerWord.RESULT_HEADER;
     this.playerWords.add(header);
+    missedHeaderIndex = this.playerWords.size();
     // If the player missed it, show the 9 letter word first
     if (!playerHasWord(DictionaryThread.currentInstance.currentNineLetter.word)) {
       PlayerWord resultWord = new PlayerWord(DictionaryThread.currentInstance.currentNineLetter.word);
@@ -634,6 +637,7 @@ public class MainActivity extends Activity {
       }
     }
     this.playerWordsAdapter.notifyDataSetChanged();
+    this.playerWordList.setSelection(missedHeaderIndex-1);
     showWordCounts(correctUserWords);
   }
 
