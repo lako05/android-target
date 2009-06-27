@@ -353,7 +353,8 @@ public class MainActivity extends Activity {
   public void onPause() {
     this.savedGame.Save();
     this.countDown.pause();
-    this.wakeLock.release();
+    if (this.wakeLock.isHeld())
+      this.wakeLock.release();
     Log.d("Target", "Paused game");
     super.onPause();
   }
