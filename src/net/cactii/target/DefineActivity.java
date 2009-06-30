@@ -112,7 +112,6 @@ public class DefineActivity extends Activity {
                          LayoutParams.WRAP_CONTENT));
       gb.setOnClickListener(new OnClickListener() {
 
-        @Override
         public void onClick(View v) {
           Intent myIntent = null;
           myIntent = new Intent(DefineActivity.this, GoogleDefineActivity.class);

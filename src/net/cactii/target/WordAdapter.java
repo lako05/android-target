@@ -29,17 +29,14 @@ public class WordAdapter extends BaseAdapter {
     this.face=Typeface.createFromAsset(MainActivity.currentInstance.getAssets(), "fonts/font.ttf");
   }
 
-  @Override
   public int getCount() {
     return playerWords.size();
   }
 
-  @Override
   public Object getItem(int item) {
     return playerWords.get(item);
   }
 
-  @Override
   public long getItemId(int position) {
     return position;
   }
@@ -53,7 +50,6 @@ public class WordAdapter extends BaseAdapter {
     return itemType != PlayerWord.RESULT_HEADER;
   }
 
-  @Override
   public View getView(int position, View returnView, ViewGroup parent) {
     returnView = inflater.inflate(R.layout.playerlistitem, null);
     PlayerWord playerWord = this.playerWords.get(position);

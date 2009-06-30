@@ -30,7 +30,6 @@ public class DictClient implements Runnable {
   private ArrayList<Definition> definitions;
   public String wordToDefine;
  
-  @Override
   public void run() {
 
     Log.d("DictC", "Will define: " + wordToDefine);

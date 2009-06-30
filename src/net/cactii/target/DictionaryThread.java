@@ -45,7 +45,6 @@ public class DictionaryThread implements Runnable {
     DictionaryThread.currentInstance = current;
   }
 
-  @Override
   public void run() {
     Looper.prepare();
     DictionaryThread.setCurrent(this);
