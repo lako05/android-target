@@ -62,7 +62,6 @@ public class NewGameActivity extends Activity {
     
     // Selecting SMH game deselects word count
     this.newGameFromSMH.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-      @Override
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
         if (isChecked)
           newGameWordCount.clearCheck();
@@ -70,7 +69,6 @@ public class NewGameActivity extends Activity {
     });
     // Selecting word count deselects smh
     this.newGameWordCount.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-      @Override
       public void onCheckedChanged(RadioGroup group, int checkedId) {
         if (checkedId > -1)
           newGameFromSMH.setChecked(false);
@@ -78,13 +76,11 @@ public class NewGameActivity extends Activity {
     });
     // Clicking SMH label selects the checkbox
     this.newGameSMHLabel.setOnClickListener(new OnClickListener() {
-      @Override
       public void onClick(View v) {
         newGameFromSMH.setChecked(!newGameFromSMH.isChecked());
       }
     });
     this.newGameStart.setOnClickListener(new OnClickListener() {
-      @Override
       public void onClick(View v) {
         if (newGameWordCount.getCheckedRadioButtonId() < 1 &&
             !newGameFromSMH.isChecked()) {
@@ -99,13 +95,11 @@ public class NewGameActivity extends Activity {
       }
     });
     this.newGameHelp.setOnClickListener(new OnClickListener() {
-      @Override
       public void onClick(View v) {
         openHelpDialog();
       }
     });
     this.newGameTimedLabel.setOnClickListener(new OnClickListener() {
-      @Override
       public void onClick(View v) {
         newGameTimed.setChecked(!newGameTimed.isChecked());
       }

@@ -24,6 +24,12 @@
 				android:paddingLeft="15px"
 				android:textStyle="bold"
 				android:textColor="#ffffff" />
+			<TextView android:text="v1.41: Fixed various user-reported bugs."
+				android:layout_width="fill_parent" 
+				android:layout_height="wrap_content"
+				android:paddingLeft="15px"	
+				android:paddingBottom="10px"		
+				android:textColor="#ffffff" />
 			<TextView android:text="v1.4: All new dictionary, UI enhancements, better definition search."
 				android:layout_width="fill_parent" 
 				android:layout_height="wrap_content"

@@ -215,7 +215,6 @@ public class MainActivity extends Activity {
     		new AlertDialog.Builder(view.getContext())
         .setTitle("Selected: " + word.word)
         .setItems(choices, new DialogInterface.OnClickListener() {
-          @Override
           public void onClick(DialogInterface dialog, int which) {
             PlayerWord word = MainActivity.this.currentSelectedWord;
             Intent myIntent = null;
@@ -446,16 +445,13 @@ public class MainActivity extends Activity {
     Animation animation = AnimationUtils.loadAnimation(this, animationResource);
 
     animation.setAnimationListener(new AnimationListener() {
-      @Override
       public void onAnimationEnd(Animation animation) {
         enteredWordBox.setTextColor(0xFF000000); 
         MainActivity.currentInstance.enteredWordBox.setText(""); 
         enteredWordBox.setGravity(Gravity.LEFT);
         playerWordsAdapter.notifyDataSetChanged();
       }
-      @Override
       public void onAnimationRepeat(Animation animation) {}
-      @Override
       public void onAnimationStart(Animation animation) {}
     });
     this.enteredWordBox.setGravity(Gravity.CENTER);
