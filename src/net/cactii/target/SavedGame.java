@@ -20,6 +20,10 @@ public class SavedGame {
   public SavedGame(MainActivity activity) {
     this.activity = activity;
   }
+  
+  public SavedGame() {
+	  
+  }
 
   // Save the current game state
   // Simple text file..
@@ -68,7 +72,7 @@ public class SavedGame {
 
   // restore from the above saved file
   // Returns whether a game was successfully restored
-  public boolean Restore() {
+  public boolean Restore(String filename) {
     String line = null;
     BufferedReader br = null;
     InputStream ins = null;
@@ -82,7 +86,7 @@ public class SavedGame {
     String remainingTime = "0";
 
     try {
-      ins = new FileInputStream(new File(MainActivity.saveFilename));
+      ins = new FileInputStream(new File(filename));
       br = new BufferedReader(new InputStreamReader(ins), 8192);
       activeState = br.readLine();
       initialTime = br.readLine();
@@ -152,6 +156,7 @@ public class SavedGame {
     
     // Reconfigures the countdown timer to the last saved time
     this.activity.countDown.end();
+    this.activity.enteredWordBox.setText("");
     if (Integer.parseInt(remainingTime) > 0) {
       this.activity.countDown.enabled = true;
       this.activity.countDown.begin(Integer.parseInt(initialTime),
@@ -159,5 +164,43 @@ public class SavedGame {
     }
     Log.d("Target", "Restored game successfully.");
     return true;
+  }
+  
+  public boolean RestoreGrid(String filename, TargetGridView view) {
+	    String line = null;
+	    BufferedReader br = null;
+	    InputStream ins = null;
+	    
+	    String currentNineLetter = "";
+	    String currentShuffled = "";
+	    try {
+	        ins = new FileInputStream(new File(filename));
+	        br = new BufferedReader(new InputStreamReader(ins), 8192);
+	        br.readLine();
+	        br.readLine();
+	        br.readLine();
+	        currentNineLetter = br.readLine();
+	        currentShuffled = br.readLine();
+	    } catch (FileNotFoundException e) {
+	        Log.d("Target", "FNF Error restoring game: " + e.getMessage());
+	      } catch (IOException e) {
+	        Log.d("Target", "IO Error restoring game: " + e.getMessage());
+	      }
+	      finally {
+	        try {
+	          ins.close();
+	          br.close();
+	        } catch (Exception e) {
+	          // Nothing.
+	        }
+	      }
+	      // Validate data read from the savedgame file
+	      if (currentNineLetter.length() != 9 ||
+	          currentShuffled.length() != 9) {
+	        Log.d("Target", "Error restoring game");
+	        return false;
+	      }
+	    view.setLetters(currentShuffled);
+	    return true;
   }
 }
