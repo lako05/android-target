@@ -3,6 +3,7 @@
  */
 package net.cactii.target;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -52,6 +53,8 @@ public class TargetGridView extends View implements OnTouchListener {
   private String letters = "";
 
   public boolean gameActive = false;
+  
+  public Activity mContext;
 
   public TargetGridView(Context context) {
     super(context);
@@ -66,7 +69,7 @@ public class TargetGridView extends View implements OnTouchListener {
     initTargetView();
   }
   protected void initTargetView() {
-    setFocusable(true);
+    //setFocusable(true);
 
     this.letters = "";
     this.gridPaint = new Paint();

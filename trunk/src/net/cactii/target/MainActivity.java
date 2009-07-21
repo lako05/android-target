@@ -52,6 +52,7 @@ public class MainActivity extends Activity {
   public static final int CLEAR_TEXTBOX = 100;
   
   public static final int ACTIVITY_NEWGAME = 7;
+  public static final int ACTIVITY_LOADGAME = 8;
   
   public static final int DOWNLOAD_STARTING = 0;
   public static final int DOWNLOAD_PROGRESS = 1;
@@ -132,6 +133,7 @@ public class MainActivity extends Activity {
     MainActivity.setCurrent(this);
     setContentView(R.layout.main);
     this.targetGrid = (TargetGridView)findViewById(R.id.targetGrid);
+    this.targetGrid.mContext = this;
     this.enteredWordBox = (TextView)findViewById(R.id.enteredWord);
     this.clearWord = (Button)findViewById(R.id.clearWord);
     this.submitWord = (Button)findViewById(R.id.submitWord);
@@ -158,7 +160,7 @@ public class MainActivity extends Activity {
     this.prefeditor = preferences.edit();
     
     PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-    this.wakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "Target");
+    this.wakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "Target");
     
     newVersionCheck();
     this.savedGame = new SavedGame(this);
@@ -269,7 +271,7 @@ public class MainActivity extends Activity {
         break;
       case DictionaryThread.MESSAGE_DICTIONARY_READY :
         // Called after game is restored when dictionary is ready.
-        if (MainActivity.this.savedGame.Restore()) {
+        if (MainActivity.this.savedGame.Restore(MainActivity.saveFilename)) {
           MainActivity.this.animateTargetGrid();
         } else {
           Intent i = new Intent(MainActivity.this, NewGameActivity.class);
@@ -465,15 +467,19 @@ public class MainActivity extends Activity {
    * explanatory.
    */
   private static final int MENU_NEWWORD = 0;
-  private static final int MENU_SCORE = 1;
-  private static final int MENU_INSTRUCTIONS = 2;
-  private static final int MENU_OPTIONS = 3;
+  private static final int MENU_SAVELOAD = 1;
+  private static final int MENU_SCORE = 2;
+  private static final int MENU_INSTRUCTIONS = 3;
+  private static final int MENU_OPTIONS = 4;
+
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     boolean supRetVal = super.onCreateOptionsMenu(menu);
     SubMenu menu_new = menu.addSubMenu(0, MENU_NEWWORD, 0, "New game");
     menu_new.setIcon(R.drawable.menu_new);
+    SubMenu menu_saveload = menu.addSubMenu(0, MENU_SAVELOAD, 0, "Save/Load");
+    menu_saveload.setIcon(R.drawable.menu_saveload);
     SubMenu menu_score = menu.addSubMenu(0, MENU_SCORE, 0, "Score game");
     menu_score.setIcon(R.drawable.menu_score);
     SubMenu menu_help = menu.addSubMenu(0, MENU_INSTRUCTIONS, 0, "Help");
@@ -512,12 +518,24 @@ public class MainActivity extends Activity {
       startActivityForResult(new Intent(
           MainActivity.this, OptionsActivity.class), 0);
       break;
+    case MENU_SAVELOAD :
+        startActivityForResult(new Intent(
+                MainActivity.this, SavedGameList.class), ACTIVITY_LOADGAME);
+    break;
     }
     return supRetVal;
   }
   
   protected void onActivityResult(int requestCode, int resultCode,
       Intent data) {
+	if (requestCode == ACTIVITY_LOADGAME && resultCode == Activity.RESULT_OK) {
+		String filename = data.getExtras().getString("filename");
+        if (MainActivity.this.savedGame.Restore(filename)) {
+        	new File(filename).delete();
+            MainActivity.this.animateTargetGrid();
+            return;
+          }
+	}
     if (requestCode != ACTIVITY_NEWGAME || resultCode != Activity.RESULT_OK)
       return;
     Log.d("Target", "Got newgame result: request " + requestCode + " result "
@@ -681,6 +699,13 @@ public class MainActivity extends Activity {
     int current_version = getVersionNumber();
     if (pref_version == -1 || pref_version != current_version) {
       new File(MainActivity.saveFilename).delete();
+      /*
+      String files[] = new File("/data/data/net.cactii.target/").list();
+      for (String fileName : files) {
+    	  if (fileName.startsWith("savedgame_"))
+    		  new File("/data/data/net.cactii.target/" + fileName).delete();
+      }
+      */
       Log.d("Target", "Version number bumped from " + pref_version + " to " + current_version);
       return;
     }
