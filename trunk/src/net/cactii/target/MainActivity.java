@@ -272,6 +272,8 @@ public class MainActivity extends Activity {
       case DictionaryThread.MESSAGE_DICTIONARY_READY :
         // Called after game is restored when dictionary is ready.
         if (MainActivity.this.savedGame.Restore(MainActivity.saveFilename)) {
+          if (!MainActivity.this.targetGrid.gameActive)
+        	  MainActivity.this.enteredWordBox.setText("Game over");
           MainActivity.this.animateTargetGrid();
         } else {
           Intent i = new Intent(MainActivity.this, NewGameActivity.class);
@@ -361,7 +363,10 @@ public class MainActivity extends Activity {
   }
   
   public void onResume() {
-    this.countDown.resume();
+	if (this.countDown.active || this.targetGrid.gameActive)
+		this.countDown.resume();
+	else
+		this.enteredWordBox.setText("Game over");
     if (this.preferences.getBoolean("wakelock", true)) {
       Log.d("Target", "Getting wake lock.");
       this.wakeLock.acquire();
@@ -572,6 +577,7 @@ public class MainActivity extends Activity {
     this.timeRemaining.setText("");
     this.targetGrid.setVisibility(View.INVISIBLE);
     this.countDown.enabled = extras.getBoolean("timed");
+    this.enteredWordBox.setText("");
     new File(MainActivity.saveFilename).delete();
     DictionaryThread.currentInstance.messageHandler.sendMessage(msg);
   }
