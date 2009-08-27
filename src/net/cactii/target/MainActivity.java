@@ -272,8 +272,6 @@ public class MainActivity extends Activity {
       case DictionaryThread.MESSAGE_DICTIONARY_READY :
         // Called after game is restored when dictionary is ready.
         if (MainActivity.this.savedGame.Restore(MainActivity.saveFilename)) {
-          if (!MainActivity.this.targetGrid.gameActive)
-        	  MainActivity.this.enteredWordBox.setText("Game over");
           MainActivity.this.animateTargetGrid();
         } else {
           Intent i = new Intent(MainActivity.this, NewGameActivity.class);
