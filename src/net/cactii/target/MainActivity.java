@@ -339,7 +339,13 @@ public class MainActivity extends Activity {
     // Animate the word result text
     int animateColour;
     String animateText;
-    if (playerWord.result == PlayerWord.RESULT_OK) {
+    if ((this.playerWords.size()-2) == DictionaryThread.currentInstance.validWords.size()) {
+    	Log.d("Target", "Got all words!");
+    	this.countDown.pause();
+        animateColour = 0xFF008000;
+        animateText = "COMPLETE!";
+        setGameState(false);
+    } else if (playerWord.result == PlayerWord.RESULT_OK) {
       animateColour = 0xFF008000;
       animateText = "GOOD!";
       if (countDown.enabled)
@@ -349,6 +355,10 @@ public class MainActivity extends Activity {
       animateText = "UNKNOWN!";
     }
     animateTextBox(animateText, animateColour, R.anim.textboxfade);
+    if (this.playerWords.size() == DictionaryThread.currentInstance.validWords.size()) {
+    	Log.d("Target", "Got all words!");
+    	this.countDown.pause();
+    }
   }
 
   public void onPause() {
