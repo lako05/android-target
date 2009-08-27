@@ -41,6 +41,9 @@ public class NewGameActivity extends Activity {
   private Button newGameHelp;
   private TextView newGameDictLabel;
   
+  public SharedPreferences preferences;
+  public SharedPreferences.Editor prefeditor = null;
+  
   /** Called when the activity is first created. */
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -59,6 +62,9 @@ public class NewGameActivity extends Activity {
     this.newGameStart = (Button)findViewById(R.id.newGameStart);
     this.newGameHelp = (Button)findViewById(R.id.newGameHelp);
     this.newGameDictLabel = (TextView)findViewById(R.id.newGameDictLabel);
+    
+    this.preferences = PreferenceManager.getDefaultSharedPreferences(this);
+    this.prefeditor = this.preferences.edit();
     
     // Selecting SMH game deselects word count
     this.newGameFromSMH.setOnCheckedChangeListener(new OnCheckedChangeListener() {
@@ -87,6 +93,8 @@ public class NewGameActivity extends Activity {
           Toast.makeText(NewGameActivity.this, "Please select word count.", Toast.LENGTH_SHORT).show();
           return;
         }
+        prefeditor.putBoolean("timed_game", newGameTimed.isChecked());
+        prefeditor.commit();
         Intent i = new Intent().putExtra("fromsmh", newGameFromSMH.isChecked()).
         putExtra("wordcount", newGameWordCount.getCheckedRadioButtonId()).
         putExtra("timed", newGameTimed.isChecked());
@@ -99,6 +107,8 @@ public class NewGameActivity extends Activity {
         openHelpDialog();
       }
     });
+    
+    this.newGameTimed.setChecked(this.preferences.getBoolean("timed_game", true));
     this.newGameTimedLabel.setOnClickListener(new OnClickListener() {
       public void onClick(View v) {
         newGameTimed.setChecked(!newGameTimed.isChecked());

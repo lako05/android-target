@@ -7,6 +7,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import net.cactii.target.SavedGame.SavedGameState;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
@@ -106,7 +108,10 @@ public class SavedGameListAdapter extends BaseAdapter {
 
 		SavedGame saver = new SavedGame();
 		try {
-			saver.RestoreGrid(saveFile, grid);
+			TextView wordCounts = (TextView)convertView.findViewById(R.id.savedWordCounts);
+			SavedGameState sgs = saver.RestoreGrid(saveFile);
+			grid.setLetters(sgs.currentShuffled);
+			wordCounts.setText("Target: " + sgs.validWords + "\n\nYou: " + sgs.playerWords);
 		}
 		catch (Exception e) {
 			// Error, delete the file.

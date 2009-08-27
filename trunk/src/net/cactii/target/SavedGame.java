@@ -156,6 +156,7 @@ public class SavedGame {
     
     // Reconfigures the countdown timer to the last saved time
     this.activity.countDown.end();
+    this.activity.timeRemaining.setText("");
     this.activity.enteredWordBox.setText("");
     if (Integer.parseInt(remainingTime) > 0) {
       this.activity.countDown.enabled = true;
@@ -166,13 +167,17 @@ public class SavedGame {
     return true;
   }
   
-  public boolean RestoreGrid(String filename, TargetGridView view) {
+  public SavedGameState RestoreGrid(String filename) {
 	    String line = null;
 	    BufferedReader br = null;
 	    InputStream ins = null;
+        ArrayList<PlayerWord> playerWords;
+        ArrayList<String> validWords;
 	    
 	    String currentNineLetter = "";
 	    String currentShuffled = "";
+	    playerWords = new ArrayList<PlayerWord>();
+	    validWords = new ArrayList<String>();
 	    try {
 	        ins = new FileInputStream(new File(filename));
 	        br = new BufferedReader(new InputStreamReader(ins), 8192);
@@ -181,6 +186,20 @@ public class SavedGame {
 	        br.readLine();
 	        currentNineLetter = br.readLine();
 	        currentShuffled = br.readLine();
+	        boolean fetchingPlayerWords = false;
+	        while((line = br.readLine())!=null) {
+	          String word = line.trim();
+	          if (fetchingPlayerWords) {
+	            PlayerWord playerWord = new PlayerWord(word);
+				playerWords.add(playerWord);
+	          } else {
+	            if (word.equals("@@PLAYERWORDS@@")) {
+	              fetchingPlayerWords = true;
+	              continue;
+	            }
+	            validWords.add(word);
+	          }
+	        }
 	    } catch (FileNotFoundException e) {
 	        Log.d("Target", "FNF Error restoring game: " + e.getMessage());
 	      } catch (IOException e) {
@@ -198,9 +217,18 @@ public class SavedGame {
 	      if (currentNineLetter.length() != 9 ||
 	          currentShuffled.length() != 9) {
 	        Log.d("Target", "Error restoring game");
-	        return false;
+	        return null;
 	      }
-	    view.setLetters(currentShuffled);
-	    return true;
+	    SavedGameState sgs = new SavedGameState();
+	    sgs.validWords = validWords.size() + 1; // Add 1 for nine-letter
+	    sgs.playerWords = playerWords.size();
+	    sgs.currentShuffled = currentShuffled;
+	    return sgs;
+  }
+  
+  public class SavedGameState {
+	  int validWords;
+	  int playerWords;
+	  String currentShuffled;
   }
 }
