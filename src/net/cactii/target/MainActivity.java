@@ -339,7 +339,7 @@ public class MainActivity extends Activity {
     // Animate the word result text
     int animateColour;
     String animateText;
-    if ((this.playerWords.size()-2) == DictionaryThread.currentInstance.validWords.size()) {
+    if (this.countCorrectWords() >= DictionaryThread.currentInstance.validWords.size()+1) {
     	Log.d("Target", "Got all words!");
     	this.countDown.pause();
         animateColour = 0xFF008000;
