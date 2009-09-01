@@ -373,8 +373,6 @@ public class MainActivity extends Activity {
   public void onResume() {
 	if (this.countDown.active || this.targetGrid.gameActive)
 		this.countDown.resume();
-	else
-		this.enteredWordBox.setText("Game over");
     if (this.preferences.getBoolean("wakelock", true)) {
       Log.d("Target", "Getting wake lock.");
       this.wakeLock.acquire();
