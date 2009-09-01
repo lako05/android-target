@@ -32,8 +32,8 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 public class NewGameActivity extends Activity {
   
   // Area for new game widgets
-  private CheckBox newGameFromSMH;
-  private TextView newGameSMHLabel;
+  //private CheckBox newGameFromSMH;
+  //private TextView newGameSMHLabel;
   private RadioGroup newGameWordCount;
   private CheckBox newGameTimed;
   private TextView newGameTimedLabel;
@@ -54,8 +54,8 @@ public class NewGameActivity extends Activity {
         WindowManager.LayoutParams.FLAG_FULLSCREEN);
     setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     setContentView(R.layout.newgame);
-    this.newGameFromSMH = (CheckBox)findViewById(R.id.newGameFromSMH);
-    this.newGameSMHLabel = (TextView)findViewById(R.id.newGameSMHLabel);
+    //this.newGameFromSMH = (CheckBox)findViewById(R.id.newGameFromSMH);
+    //this.newGameSMHLabel = (TextView)findViewById(R.id.newGameSMHLabel);
     this.newGameWordCount = (RadioGroup)findViewById(R.id.newGameWordCount);
     this.newGameTimed = (CheckBox)findViewById(R.id.newGameTimed);
     this.newGameTimedLabel = (TextView)findViewById(R.id.newGameTimedLabel);
@@ -66,6 +66,7 @@ public class NewGameActivity extends Activity {
     this.preferences = PreferenceManager.getDefaultSharedPreferences(this);
     this.prefeditor = this.preferences.edit();
     
+    /*
     // Selecting SMH game deselects word count
     this.newGameFromSMH.setOnCheckedChangeListener(new OnCheckedChangeListener() {
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -73,29 +74,34 @@ public class NewGameActivity extends Activity {
           newGameWordCount.clearCheck();
       }
     });
+    */
     // Selecting word count deselects smh
     this.newGameWordCount.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
       public void onCheckedChanged(RadioGroup group, int checkedId) {
+    	  /*
         if (checkedId > -1)
           newGameFromSMH.setChecked(false);
+          */
       }
     });
     // Clicking SMH label selects the checkbox
+    /*
     this.newGameSMHLabel.setOnClickListener(new OnClickListener() {
       public void onClick(View v) {
         newGameFromSMH.setChecked(!newGameFromSMH.isChecked());
       }
     });
+    */
     this.newGameStart.setOnClickListener(new OnClickListener() {
       public void onClick(View v) {
-        if (newGameWordCount.getCheckedRadioButtonId() < 1 &&
-            !newGameFromSMH.isChecked()) {
+        if (newGameWordCount.getCheckedRadioButtonId() < 1) {// &&
+         //   !newGameFromSMH.isChecked()) {
           Toast.makeText(NewGameActivity.this, "Please select word count.", Toast.LENGTH_SHORT).show();
           return;
         }
         prefeditor.putBoolean("timed_game", newGameTimed.isChecked());
         prefeditor.commit();
-        Intent i = new Intent().putExtra("fromsmh", newGameFromSMH.isChecked()).
+        Intent i = new Intent().//putExtra("fromsmh", newGameFromSMH.isChecked()).
         putExtra("wordcount", newGameWordCount.getCheckedRadioButtonId()).
         putExtra("timed", newGameTimed.isChecked());
         setResult(Activity.RESULT_OK, i);
